@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<launch>
+  
+  <node pkg="mrgs_alignment" type="align_node" name="align_node" output="screen" launch-prefix="gdb -ex run --args">
+  </node>
+  
+</launch>

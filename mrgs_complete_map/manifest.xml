@@ -1,0 +1,18 @@
+<package>
+  <description brief="mrgs_complete_map">
+
+     mrgs_complete_map
+
+  </description>
+  <author>vsantos</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/mrgs_complete_map</url>
+  <depend package="roscpp"/>
+  <depend package="std_msgs"/>
+  <depend package="mrgs_alignment"/>
+  <depend package="mrgs_data_interface"/>
+
+</package>
+
+

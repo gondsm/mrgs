@@ -1,0 +1,6 @@
+nav_msgs/OccupancyGrid map1
+nav_msgs/OccupancyGrid map2
+---
+#geometry_msgs/Transform ros_transform         # Standard ROS transformation
+mrgs_alignment/CTransform mapmerge_transform  # Non-standard transformation, direct output from algorithm
+nav_msgs/OccupancyGrid merged_map

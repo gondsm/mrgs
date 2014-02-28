@@ -1,0 +1,17 @@
+<package>
+  <description brief="mrgs_alignment">
+
+     mrgs_alignment
+
+  </description>
+  <author>Gonçalo Martins</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/mrgs_alignment</url>
+  <depend package="roscpp"/>
+  <depend package="nav_msgs"/>
+  <depend package="std_msgs"/>
+  <depend package="opencv2"/>
+</package>
+
+

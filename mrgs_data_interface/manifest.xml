@@ -1,0 +1,17 @@
+<package>
+  <description brief="mrgs_data_interface">
+
+     mrgs_data_interface
+
+  </description>
+  <author>vsantos</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/mrgs_data_interface</url>
+  <depend package="roscpp"/>
+  <depend package="std_msgs"/>
+  <depend package="nav_msgs"/>
+
+</package>
+
+

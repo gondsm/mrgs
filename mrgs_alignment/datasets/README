@@ -1,0 +1,10 @@
+These are the datasets used in  the experiments illustrated
+in the IROS and Autonomous Robots papers.
+
+The files intel.txt and robotXX.txt have been built from the
+intel_lab and ap_hill datasets available on radish.sourceforge.net.
+Other datasets were collected at UC Merced. If you use them,
+please cite the above papers.
+
+Maps are encoded using the default values used for the
+grid_map class (see documentation therein).

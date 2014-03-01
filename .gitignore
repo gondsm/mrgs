@@ -1,2 +1,14 @@
 # Ignore temp files
 *~
+# Ignore build artifacts
+bin/
+lib/
+build/
+msg_gen/
+srv_gen/
+
+# Ignore weird folders created inside src
+mrgs_alignment/src/mrgs_alignment/
+mrgs_complete_map/src/mrgs_complete_map/
+mrgs_compression_test/src/mrgs_compression_test/
+mrgs_data_interface/src/mrgs_data_interface/

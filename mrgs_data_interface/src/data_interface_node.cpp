@@ -69,7 +69,7 @@ nav_msgs::OccupancyGrid::ConstPtr g_latest_local_map;
 // (at(0) is always our local mac)
 std::vector<std::string> g_peer_macs;
 // To be written by the processForeignMap callback
-std::vector<mrgs_data_interface::ForeignMap> g_foreign_map_vector;
+std::vector<mrgs_data_interface::ForeignMap::ConstPtr> g_foreign_map_vector;
 
 
 inline int getRobotID(std:: string mac){
@@ -99,6 +99,7 @@ void processForeignMap(std::string ip, const mrgs_data_interface::NetworkMap::Co
   int decompressed_bytes = LZ4_decompress_safe(compressed, decompressed, msg->compressed_data.size(), msg->decompressed_length);
   
   /// Copy data to foreign map vector
+  // id is used as the vector's index
 }
 
 void processMap(const nav_msgs::OccupancyGrid::ConstPtr& map)
@@ -127,7 +128,7 @@ int main(int argc, char **argv)
   }
   else
   {
-    ROS_ERROR("Can't open file mac address file!");
+    ROS_ERROR("Can't open mac address file!");
     return -1;
   }
   

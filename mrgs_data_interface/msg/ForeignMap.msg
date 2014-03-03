@@ -1,3 +1,3 @@
 # Message type to hold a map from another robot
-string robot_id
+uint8 robot_id
 nav_msgs/OccupancyGrid map

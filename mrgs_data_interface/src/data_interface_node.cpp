@@ -41,7 +41,7 @@
  * Summary:
  * This node is responsible of keeping track of all the topics we must subscribe to in order to communicate with other
  * robots, as well as keeping local copies of foreign maps and propagating those maps in a standardized way across
- * our local system.
+ * our local system. This node is also responsible for propagating our local maps throughout the network.
  * 
  * Methodology:
  */

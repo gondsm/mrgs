@@ -55,6 +55,9 @@
 // LZ4 include:
 #include "lz4/lz4.h"
 
+// Wifi_comm includes
+#include "wifi_comm/wifi_comm_lib.h"
+
 // Other includes
 #include <string>
 #include <fstream>
@@ -65,12 +68,17 @@
 // Global variables
 // To be written only by the processMap callback
 nav_msgs::OccupancyGrid::ConstPtr g_latest_local_map;
-// To be written only by the newRobotInNetwork callback and once in main()
+// To be written only by the processForeignMap callback and once in main()
 // (at(0) is always our local mac)
 std::vector<std::string> g_peer_macs;
 // To be written by the processForeignMap callback
 std::vector<mrgs_data_interface::ForeignMap::ConstPtr> g_foreign_map_vector;
-
+// wifi_comm object
+wifi_comm::WiFiComm* g_my_comm;
+// Node handle. Must be global to be accessible by callbacks.
+ros::NodeHandle * g_n;
+// Global list of subscribers (also required by wifi_comm)
+std::vector<ros::Subscriber> subs;
 
 inline int getRobotID(std:: string mac){
   // We're in trouble if the desired mac doesn't exist.
@@ -82,12 +90,14 @@ inline int getRobotID(std:: string mac){
     return i;
 }
 
-void processForeignMap(std::string ip, const mrgs_data_interface::NetworkMap::ConstPtr msg)
+void processForeignMap(std::string ip, const mrgs_data_interface::NetworkMap::ConstPtr& msg)
 {
-	ROS_DEBUG("Received a foreign map from %s.", ip.c_str());
+	ROS_INFO("Received a foreign map from %s.", ip.c_str());
   /// Determine which robot sent the map (i.e. determine its ID)
-  int id = getRobotID(msg->mac);
-  
+  /// (Add it to our list if we've never encountered it before)
+  //int id = getRobotID(msg->mac);
+  ROS_INFO("Received map has MAC = %s.", msg->mac.c_str());
+  /*
   /// Decompress data
   // Allocate and populate compressed buffer
   char* compressed = new char[msg->compressed_data.size()];
@@ -99,7 +109,20 @@ void processForeignMap(std::string ip, const mrgs_data_interface::NetworkMap::Co
   int decompressed_bytes = LZ4_decompress_safe(compressed, decompressed, msg->compressed_data.size(), msg->decompressed_length);
   
   /// Copy data to foreign map vector
-  // id is used as the vector's index
+  // id is used as the vector's index*/
+}
+
+void newRobotInNetwork(char * ip)
+{
+  ROS_INFO("Setting up a new connection with %s.", ip);
+  
+  // Send
+  g_my_comm->openForeignRelay(ip, "/external_map", true);
+
+  // Receive
+  char topic[128];
+  ros::Subscriber sub = g_n->subscribe<mrgs_data_interface::NetworkMap>(wifi_comm::WiFiComm::concatTopicAndIp(topic, "/external_map", ip), 1, boost::bind(processForeignMap, std::string(ip), _1));
+  subs.push_back(sub);
 }
 
 void processMap(const nav_msgs::OccupancyGrid::ConstPtr& map)
@@ -111,7 +134,11 @@ int main(int argc, char **argv)
 {
   // ROS init
   ros::init(argc, argv, "data_interface_node");
-  ros::NodeHandle n;
+  g_n = new ros::NodeHandle;
+  
+  // wifi_comm init
+  g_my_comm = new wifi_comm::WiFiComm(newRobotInNetwork);
+  ros::Publisher external_map = g_n->advertise<mrgs_data_interface::ForeignMap>("external_map", 10);
   
   // Retrieve local MAC address
   std::string* mac_file_path = new std::string(std::string("/sys/class/net/") + std::string(MRGS_INTERFACE) + std::string("/address"));
@@ -137,10 +164,18 @@ int main(int argc, char **argv)
   ROS_INFO("Our local map is at index %d.", getRobotID(g_peer_macs.at(0)));
   
   // Declare callbacks
-  ros::Subscriber map = n.subscribe<nav_msgs::OccupancyGrid>("map", 1, processMap);
+  ros::Subscriber map = g_n->subscribe<nav_msgs::OccupancyGrid>("map", 1, processMap);
   
   // Regular execution: loop with spinOnce
-  //ros::spin();
+  ros::Rate r(1/10);
+  mrgs_data_interface::NetworkMap msg;
+  msg.mac = g_peer_macs.at(0);
+  while(ros::ok())
+  {
+    external_map.publish(msg);
+    r.sleep();
+  }
+  
 
   return 0;
 }

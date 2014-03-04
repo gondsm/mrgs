@@ -181,6 +181,7 @@ int main(int argc, char **argv)
   {
     ROS_INFO("Publishing message...");
     external_map.publish(msg);
+    ros::spinOnce();
     r.sleep();
   }
   

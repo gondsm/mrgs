@@ -46,26 +46,23 @@
  * Methodology:
  */
 
-// ROS includes
+/// ROS includes
 #include "ros/ros.h"
 #include "mrgs_data_interface/ForeignMap.h"
 #include "mrgs_data_interface/ForeignMapVector.h"
 #include "mrgs_data_interface/NetworkMap.h"
 
-// LZ4 include:
+/// LZ4 include:
 #include "lz4/lz4.h"
 
-// Wifi_comm includes
+/// Wifi_comm includes
 #include "wifi_comm/wifi_comm_lib.h"
 
-// Other includes
+/// Other includes
 #include <string>
 #include <fstream>
 
-// Defines
-//#define MRGS_INTERFACE "eth1"
-
-// Global variables
+/// Global variables
 // To be written only by the processMap callback
 nav_msgs::OccupancyGrid::ConstPtr g_latest_local_map;
 // To be written only by the processForeignMap callback and once in main()
@@ -92,13 +89,13 @@ inline int getRobotID(std:: string mac){
 
 void processForeignMap(std::string ip, const mrgs_data_interface::NetworkMap::ConstPtr& msg)
 {
-	ROS_INFO("Received a foreign map from %s.", ip.c_str());
+  // Inform the outside world of our reception.
+	ROS_INFO("Received a foreign map from %s, with mac %s.", ip.c_str(), msg->mac.c_str());
   /// Determine which robot sent the map (i.e. determine its ID)
   /// (Add it to our list if we've never encountered it before)
   //int id = getRobotID(msg->mac);
-  ROS_INFO("Received map has MAC = %s.", msg->mac.c_str());
-  /*
-  /// Decompress data
+  
+  /*/// Decompress data
   // Allocate and populate compressed buffer
   char* compressed = new char[msg->compressed_data.size()];
   for(int i = 0; i < msg->compressed_data.size(); i++)
@@ -114,19 +111,20 @@ void processForeignMap(std::string ip, const mrgs_data_interface::NetworkMap::Co
 
 void newRobotInNetwork(char * ip)
 {
-  ROS_INFO("Setting up a new connection with %s.", ip);
-  
   // Send
   g_my_comm->openForeignRelay(ip, "/external_map", true);
-
   // Receive
   char topic[128];
-  ros::Subscriber sub = g_n->subscribe<mrgs_data_interface::NetworkMap>(wifi_comm::WiFiComm::concatTopicAndIp(topic, "/external_map", ip), 1, boost::bind(processForeignMap, std::string(ip), _1));
+  ros::Subscriber sub = g_n->subscribe<mrgs_data_interface::NetworkMap>(wifi_comm::WiFiComm::concatTopicAndIp(topic, "/external_map", ip),
+                                                                        1,  // Number of messages to keep on the input queue 
+                                                                        boost::bind(processForeignMap, 
+                                                                        std::string(ip), _1));
   subs.push_back(sub);
 }
 
 void processMap(const nav_msgs::OccupancyGrid::ConstPtr& map)
 {
+  // We simply change our global pointer to point to the latest map. The smart pointer should take care of deallocation.
   g_latest_local_map = map;
 }
 
@@ -136,6 +134,7 @@ int main(int argc, char **argv)
   if(argc < 2)
   {
     ROS_FATAL("I need the interface you want me to work with!");
+    ROS_INFO("Usage: rosrun <package> <node> <interface>");
     return -1;
   }
   
@@ -166,9 +165,7 @@ int main(int argc, char **argv)
     return -1;
   }
   
-  ROS_INFO("Got mac: %s.", g_peer_macs.at(0).c_str());
-  
-  //ROS_INFO("Our local map is at index %d.", getRobotID(g_peer_macs.at(0)));
+  ROS_INFO("Local mac address is: %s.", g_peer_macs.at(0).c_str());
   
   // Declare callbacks
   ros::Subscriber map = g_n->subscribe<nav_msgs::OccupancyGrid>("map", 1, processMap);
@@ -179,7 +176,6 @@ int main(int argc, char **argv)
   msg.mac = g_peer_macs.at(0);
   while(ros::ok())
   {
-    ROS_INFO("Publishing message...");
     external_map.publish(msg);
     ros::spinOnce();
     r.sleep();

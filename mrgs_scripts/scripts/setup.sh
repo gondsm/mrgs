@@ -1,0 +1,45 @@
+#!/bin/bash -x
+# This script is intended to make this stack's installation as painless as possibile by pulling all the necessary
+# code from remote repositories, compiling and installing it. Use at your own risk.
+# This script assumes ROS fuerte is installed and that this script is being run from within mrgs_scripts/scripts.
+#
+#
+# Gonçalo S. Martins.
+
+# Install libsuitesparse, bison (for olsrd), flex (idem), from Ubuntu repositories
+sudo apt-get install libsuitesparse-dev bison flex
+
+# Pull and unpack olsrd
+wget http://www.olsr.org/releases/0.6/olsrd-0.6.6.1.tar.bz2
+tar xf olsrd-0.6.6.1.tar.bz2
+rm olsrd-0.6.6.1.tar.bz2
+mv olsrd-0.6.6.1/ olsrd/
+
+# Install what we need from olsrd
+cd olsrd
+make
+sudo make install
+cd lib/txtinfo
+make
+sudo make install
+cd ../httpinfo
+make
+sudo make install
+cd ..
+
+# Pull multimaster_experimental
+svn co https://code.ros.org/svn/ros/stacks/multimaster_experimental/trunk ../../../multimaster_experimental
+
+# Pull lse_communication
+svn co http://isr-uc-ros-pkg.googlecode.com/svn/stacks/lse_communication/trunk/lse_communication ../../../lse_communication
+
+# Pull vslam
+svn co https://code.ros.org/svn/ros-pkg/stacks/vslam/trunk ../../../vslam
+
+# Pull karto
+git clone https://bitbucket.org/gondsm/karto.git ../../../karto
+
+# Make all this stuff
+rosmake sba
+rosmake karto
+rosmake wifi_comm

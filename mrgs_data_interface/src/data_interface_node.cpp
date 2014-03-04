@@ -63,7 +63,7 @@
 #include <fstream>
 
 // Defines
-#define MRGS_INTERFACE "eth1"
+//#define MRGS_INTERFACE "eth1"
 
 // Global variables
 // To be written only by the processMap callback
@@ -132,6 +132,13 @@ void processMap(const nav_msgs::OccupancyGrid::ConstPtr& map)
 
 int main(int argc, char **argv)
 {
+  // Argument parsing
+  if(argc < 2)
+  {
+    ROS_FATAL("I need the interface you want me to work with!");
+    return -1;
+  }
+  
   // ROS init
   ros::init(argc, argv, "data_interface_node");
   g_n = new ros::NodeHandle;
@@ -141,7 +148,7 @@ int main(int argc, char **argv)
   ros::Publisher external_map = g_n->advertise<mrgs_data_interface::ForeignMap>("external_map", 10);
   
   // Retrieve local MAC address
-  std::string* mac_file_path = new std::string(std::string("/sys/class/net/") + std::string(MRGS_INTERFACE) + std::string("/address"));
+  std::string* mac_file_path = new std::string(std::string("/sys/class/net/") + std::string(argv[1]) + std::string("/address"));
   std::string* local_mac = new std::string;
   std::ifstream mac_file;
   mac_file.open((*mac_file_path).c_str(), std::ios::in);
@@ -167,11 +174,12 @@ int main(int argc, char **argv)
   ros::Subscriber map = g_n->subscribe<nav_msgs::OccupancyGrid>("map", 1, processMap);
   
   // Regular execution: loop with spinOnce
-  ros::Rate r(1.0/10);
+  ros::Rate r(1);
   mrgs_data_interface::NetworkMap msg;
   msg.mac = g_peer_macs.at(0);
   while(ros::ok())
   {
+    ROS_INFO("Publishing message...");
     external_map.publish(msg);
     r.sleep();
   }

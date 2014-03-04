@@ -145,7 +145,7 @@ int main(int argc, char **argv)
   
   // wifi_comm init
   g_my_comm = new wifi_comm::WiFiComm(newRobotInNetwork);
-  ros::Publisher external_map = g_n->advertise<mrgs_data_interface::ForeignMap>("external_map", 10);
+  ros::Publisher external_map = g_n->advertise<mrgs_data_interface::NetworkMap>("external_map", 10);
   
   // Retrieve local MAC address
   std::string* mac_file_path = new std::string(std::string("/sys/class/net/") + std::string(argv[1]) + std::string("/address"));

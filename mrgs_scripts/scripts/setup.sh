@@ -26,6 +26,9 @@ cd ../httpinfo
 make
 sudo make install
 cd ..
+cd ..
+cd ..
+rm -rf olsrd
 
 # Pull multimaster_experimental
 svn co https://code.ros.org/svn/ros/stacks/multimaster_experimental/trunk ../../../multimaster_experimental

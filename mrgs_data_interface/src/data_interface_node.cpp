@@ -63,7 +63,7 @@
 #include <fstream>
 
 // Defines
-#define MRGS_INTERFACE "eth0"
+#define MRGS_INTERFACE "eth1"
 
 // Global variables
 // To be written only by the processMap callback
@@ -149,7 +149,7 @@ int main(int argc, char **argv)
   {
     mac_file >> *local_mac;
     mac_file.close();
-    //g_peer_macs.push_back(*local_mac);
+    g_peer_macs.push_back(*local_mac);
     delete local_mac;
     delete mac_file_path;
   }
@@ -159,15 +159,15 @@ int main(int argc, char **argv)
     return -1;
   }
   
-  ROS_DEBUG("Got mac: %s.", g_peer_macs.at(0).c_str());
+  ROS_INFO("Got mac: %s.", g_peer_macs.at(0).c_str());
   
-  ROS_INFO("Our local map is at index %d.", getRobotID(g_peer_macs.at(0)));
+  //ROS_INFO("Our local map is at index %d.", getRobotID(g_peer_macs.at(0)));
   
   // Declare callbacks
   ros::Subscriber map = g_n->subscribe<nav_msgs::OccupancyGrid>("map", 1, processMap);
   
   // Regular execution: loop with spinOnce
-  ros::Rate r(1/10);
+  ros::Rate r(1.0/10);
   mrgs_data_interface::NetworkMap msg;
   msg.mac = g_peer_macs.at(0);
   while(ros::ok())

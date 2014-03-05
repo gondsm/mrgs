@@ -78,13 +78,14 @@ ros::NodeHandle * g_n;
 std::vector<ros::Subscriber> subs;
 
 inline int getRobotID(std:: string mac){
-  // We're in trouble if the desired mac doesn't exist.
-  int i = 0;
-  for(i = 0; i < g_peer_macs.size() && g_peer_macs.at(i) != mac; i++) {}
-  if(i == g_peer_macs.size())
-    return -1; // not found
+  // Find the desired MAC's index
+  int index = std::distance(g_peer_macs.begin(), std::find(g_peer_macs.begin(), g_peer_macs.end(), mac));
+  // If the index isn't smaller than the size, the the desired MAC doesn't exist, 
+  // and we return -1 to indicate just that.
+  if(index < g_peer_macs.size())
+    return index;
   else
-    return i;
+    return -1;
 }
 
 void processForeignMap(std::string ip, const mrgs_data_interface::NetworkMap::ConstPtr& msg)
@@ -133,7 +134,7 @@ int main(int argc, char **argv)
   // Argument parsing
   if(argc < 2)
   {
-    ROS_FATAL("I need the interface you want me to work with!");
+    ROS_FATAL("I need the interface you want me to work with (must be the same olsrd is using)!");
     ROS_INFO("Usage: rosrun <package> <node> <interface>");
     return -1;
   }
@@ -165,7 +166,6 @@ int main(int argc, char **argv)
     return -1;
   }
   
-  ROS_INFO("Local mac address is: %s.", g_peer_macs.at(0).c_str());
   
   // Declare callbacks
   ros::Subscriber map = g_n->subscribe<nav_msgs::OccupancyGrid>("map", 1, processMap);

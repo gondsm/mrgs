@@ -90,24 +90,43 @@ inline int getRobotID(std:: string mac){
 
 void processForeignMap(std::string ip, const mrgs_data_interface::NetworkMap::ConstPtr& msg)
 {
+  /// Determine which robot sent the map (i.e. determine its ID) and act on that knowledge.
+  int id = getRobotID(msg->mac);
   // Inform the outside world of our reception.
-	ROS_INFO("Received a foreign map from %s, with mac %s.", ip.c_str(), msg->mac.c_str());
-  /// Determine which robot sent the map (i.e. determine its ID)
-  /// (Add it to our list if we've never encountered it before)
-  //int id = getRobotID(msg->mac);
+	ROS_INFO("Received a foreign map from %s, with mac %s, corresponding to id %d.", ip.c_str(), msg->mac.c_str(), id);
+  if(id == -1)
+  {
+    // We've never found this robot before!
+    // Add new robot to our list of peer macs
+    id = g_peer_macs.size();          // The new MAC will be added at the end of the vector
+    g_peer_macs.push_back(msg->mac);  // Add new MAC
+  }
   
-  /*/// Decompress data
-  // Allocate and populate compressed buffer
-  char* compressed = new char[msg->compressed_data.size()];
-  for(int i = 0; i < msg->compressed_data.size(); i++)
-    compressed[i] = msg->compressed_data.at(i);
-  // Allocate decompression buffer
-  char* decompressed = new char [msg->decompressed_length];
-  // Decompress
-  int decompressed_bytes = LZ4_decompress_safe(compressed, decompressed, msg->compressed_data.size(), msg->decompressed_length);
+  // DEBUG: Print our current list of macs
+  std::vector<std::string>::iterator i_mac_vector = g_peer_macs.begin();
+  int i = 0;
+  do
+  {
+  } while(i_mac_vector != g_peer_macs.end());
   
-  /// Copy data to foreign map vector
-  // id is used as the vector's index*/
+  /// Decompress data
+  if(msg->decompressed_length > 0)  // Messages with this variable set to 0 are debug messages meant to test the network,
+                                    // vector management, etc...
+  {
+    // Allocate and populate compressed buffer
+    char* compressed = new char[msg->compressed_data.size()];
+    for(int i = 0; i < msg->compressed_data.size(); i++)
+      compressed[i] = msg->compressed_data.at(i);
+    // Allocate decompression buffer
+    char* decompressed = new char [msg->decompressed_length];
+    // Decompress
+    int decompressed_bytes = LZ4_decompress_safe(compressed, decompressed, msg->compressed_data.size(), msg->decompressed_length);
+    
+    /// Copy data to foreign map vector
+    // id is used as the vector's index
+  }
+  else
+    ROS_INFO("This is a debug map. No decompression took place.");
 }
 
 void newRobotInNetwork(char * ip)
@@ -174,6 +193,7 @@ int main(int argc, char **argv)
   ros::Rate r(1);
   mrgs_data_interface::NetworkMap msg;
   msg.mac = g_peer_macs.at(0);
+  msg.decompressed_length = 0;  // Indicating this is a debug message
   while(ros::ok())
   {
     external_map.publish(msg);

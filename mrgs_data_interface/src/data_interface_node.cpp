@@ -134,6 +134,8 @@ void processForeignMap(std::string ip, const mrgs_data_interface::NetworkMap::Co
 
 void newRobotInNetwork(char * ip)
 {
+  // Inform
+  ROS_INFO("Connecting to new peer at %s.", ip);
   // Send
   g_my_comm->openForeignRelay(ip, "/external_map", true);
   // Receive
@@ -160,17 +162,20 @@ int main(int argc, char **argv)
     ROS_INFO("Usage: rosrun <package> <node> <interface>");
     return -1;
   }
-  
+  std::string interface(argv[1]);
+
   // ROS init
   ros::init(argc, argv, "data_interface_node");
   g_n = new ros::NodeHandle;
+ 
+  //ROS_INFO("Interface: %s.", interface.c_str());
   
   // wifi_comm init
   g_my_comm = new wifi_comm::WiFiComm(newRobotInNetwork);
   ros::Publisher external_map = g_n->advertise<mrgs_data_interface::NetworkMap>("external_map", 10);
   
   // Retrieve local MAC address
-  std::string* mac_file_path = new std::string(std::string("/sys/class/net/") + std::string(argv[1]) + std::string("/address"));
+  std::string* mac_file_path = new std::string(std::string("/sys/class/net/") + interface + std::string("/address"));
   std::string* local_mac = new std::string;
   std::ifstream mac_file;
   mac_file.open((*mac_file_path).c_str(), std::ios::in);

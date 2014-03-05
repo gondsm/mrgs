@@ -105,8 +105,11 @@ void processForeignMap(std::string ip, const mrgs_data_interface::NetworkMap::Co
   // DEBUG: Print our current list of macs
   std::vector<std::string>::iterator i_mac_vector = g_peer_macs.begin();
   int i = 0;
+  ROS_INFO("MACs we have already:");
   do
   {
+    ROS_INFO("%s", i_mac_vector->c_str());
+    i_mac_vector++;
   } while(i_mac_vector != g_peer_macs.end());
   
   /// Decompress data

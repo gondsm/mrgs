@@ -119,7 +119,7 @@ void processForeignMap(std::string ip, const mrgs_data_interface::NetworkMap::Co
     mrgs_data_interface::ForeignMap::Ptr newMap(new mrgs_data_interface::ForeignMap);
     newMap->robot_id = id;                         // Attribute the right id
     g_foreign_map_vector.push_back(newMap);        // Add a new, uninitialized map.
-    ROS_INFO("We've never met this guy before. His id is now %d. Vector sizes are %d and %d.", id, g_peer_macs.size(), g_foreign_map_vector.size());
+    ROS_DEBUG("We've never met this guy before. His id is now %d. Vector sizes are %d and %d.", id, g_peer_macs.size(), g_foreign_map_vector.size());
   }
   else
   {
@@ -127,8 +127,7 @@ void processForeignMap(std::string ip, const mrgs_data_interface::NetworkMap::Co
     // the same map.
     if(g_foreign_map_vector.at(id)->map.header.stamp == msg->grid_stamp)
     {
-      ROS_INFO("We already have this map. Skipping decompression.");
-      ROS_INFO("Processing foreign map took %fs.", (ros::Time::now() - init).toSec());
+      ROS_INFO("We already have this map. Skipping decompression. Processing foreign map took %fs.", (ros::Time::now() - init).toSec());
       return;
     }
   }
@@ -138,7 +137,7 @@ void processForeignMap(std::string ip, const mrgs_data_interface::NetworkMap::Co
   if(msg->decompressed_length > 0)  // Messages with this variable set to 0 are debug messages meant to test the network,
                                     // vector management, etc...
   {
-    ROS_INFO("Received map consists of %d compressed bytes. Decompressing.", msg->compressed_data.size());
+    ROS_DEBUG("Received map consists of %d compressed bytes. Decompressing.", msg->compressed_data.size());
     // Allocate and populate compressed buffer
     char* compressed = new char[msg->compressed_data.size()];
     for(int i = 0; i < msg->compressed_data.size(); i++)
@@ -159,7 +158,7 @@ void processForeignMap(std::string ip, const mrgs_data_interface::NetworkMap::Co
       g_foreign_map_vector.at(id)->map.data.push_back(decompressed[i]);
   }
   else
-    ROS_INFO("This is a debug map. No decompression took place.");
+    ROS_DEBUG("This is a debug map. No decompression took place.");
     
   /// Inform
   ROS_INFO("Processing foreign map took %fs.", (ros::Time::now() - init).toSec());
@@ -168,7 +167,7 @@ void processForeignMap(std::string ip, const mrgs_data_interface::NetworkMap::Co
 void newRobotInNetwork(char * ip)
 {
   // Inform
-  ROS_INFO("Connecting to new peer at %s.", ip);
+  ROS_DEBUG("Connecting to new peer at %s.", ip);
   // Send
   g_my_comm->openForeignRelay(ip, "/external_map", true);
   // Receive
@@ -228,7 +227,6 @@ int main(int argc, char **argv)
     ROS_INFO("Usage: rosrun <package> <node> <interface>");
     return -1;
   }
-  //std::string interface(argv[1]);
 
   // ROS init
   ros::init(argc, argv, "data_interface_node");
@@ -255,7 +253,7 @@ int main(int argc, char **argv)
   }
   else
   {
-    ROS_ERROR("Can't open mac address file!");
+    ROS_FATAL("Can't open mac address file, terminating.");
     return -1;
   }
   
@@ -275,7 +273,7 @@ int main(int argc, char **argv)
       ROS_DEBUG("No map to publish yet.");
     else
     {
-      ROS_INFO("Publishing map...");
+      ROS_DEBUG("Publishing map...");
       external_map.publish(*g_publish_map);
     }
     

@@ -92,6 +92,9 @@ inline int getRobotID(std:: string mac){
 
 void processForeignMap(std::string ip, const mrgs_data_interface::NetworkMap::ConstPtr& msg)
 {
+  // Start counting time
+  ros::Time init = ros::Time::now();
+  
   /// Determine which robot sent the map (i.e. determine its ID) and act on that knowledge.
   int id = getRobotID(msg->mac);
   // Inform the outside world of our reception.
@@ -114,6 +117,7 @@ void processForeignMap(std::string ip, const mrgs_data_interface::NetworkMap::Co
     if(g_foreign_map_vector.at(id)->map.header.stamp == msg->grid_stamp)
     {
       ROS_INFO("We already have this map. Skipping decompression.");
+      ROS_INFO("Processing foreign map took %fs.", (ros::Time::now() - init).toSec());
       return;
     }
   }
@@ -145,6 +149,9 @@ void processForeignMap(std::string ip, const mrgs_data_interface::NetworkMap::Co
   }
   else
     ROS_INFO("This is a debug map. No decompression took place.");
+    
+  /// Inform
+  ROS_INFO("Processing foreign map took %fs.", (ros::Time::now() - init).toSec());
 }
 
 void newRobotInNetwork(char * ip)
@@ -166,6 +173,10 @@ void processMap(const nav_msgs::OccupancyGrid::ConstPtr& map)
 {
   // This function processes a new local map. It updates the latest local map pointer and creates a new publish-able
   // NetworkMap.
+  
+  // Start counting time
+  ros::Time init = ros::Time::now();
+  
   /// Update the local map
   g_latest_local_map = map;
   
@@ -194,6 +205,7 @@ void processMap(const nav_msgs::OccupancyGrid::ConstPtr& map)
   /// Inform
   ROS_INFO("Processed a new local map. Size: %d bytes. Compressed size: %d bytes. Ratio: %f", 
            map_length, compressed_bytes, (float)map_length/(float)compressed_bytes);
+  ROS_INFO("Processing local map took %fs.", (ros::Time::now() - init).toSec());
 }
 
 int main(int argc, char **argv)

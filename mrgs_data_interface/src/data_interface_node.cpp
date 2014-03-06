@@ -44,6 +44,17 @@
  * our local system. This node is also responsible for propagating our local maps throughout the network.
  * 
  * Methodology:
+ * This node maintains a multitude of global variables that, together, represent the current state of the operation, as
+ * seen by the local robot.
+ * -> g_latest_local_map: The latest map published in /map.
+ * -> g_peer_macs: A list of robots we have already encountered.
+ * -> g_foreign_map_vector: A vector of foreign maps, for publishing in the local network.
+ * -> g_my_comm: WiFiComm object, responsible for facilitating communication.
+ * -> g_n: ROS node handle, must be global to make subscription of topics in callbacks possible.
+ * -> g_subs: Vector os subscriptions.
+ * -> g_publish_map: An external map, for publishing in the network connecting multiple robots.
+ * These variables are only written to on very very well determined moments, to prevent race conditions and other data-
+ * -related issues.
  */
 
 /// ROS includes

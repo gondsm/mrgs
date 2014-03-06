@@ -218,7 +218,7 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
   // Translate grids to re-center:
   mapmerge::grid_map a,b;
   mapmerge::translate_map(a, temp_a, -padding_rows, -padding_cols); // Why do we have to invert the translation input?
-  mapmerge::translate_map(b, temp_b, -padding_rows, -padding_cols);
+  mapmerge::translate_map(b, temp_b, -padding_rows, -padding_cols); // oh well...
 
 
   // Report performance
@@ -258,9 +258,9 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
   }
   
   // DEBUG: Write maps to disk for viewing
-  mapmerge::save_map_to_file(a, "/home/vsantos/lol/in1.png");
-  mapmerge::save_map_to_file(b, "/home/vsantos/lol/in2.png");
-  mapmerge::save_map_to_file(d, "/home/vsantos/lol/out.png");
+  //mapmerge::save_map_to_file(a, "/home/vsantos/lol/in1.png");
+  //mapmerge::save_map_to_file(b, "/home/vsantos/lol/in2.png");
+  //mapmerge::save_map_to_file(d, "/home/vsantos/lol/out.png");
   
   // Write results to non-standard response message
   res.mapmerge_transform.index = hyp[0].ai;

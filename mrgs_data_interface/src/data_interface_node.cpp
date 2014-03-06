@@ -95,7 +95,7 @@ void processForeignMap(std::string ip, const mrgs_data_interface::NetworkMap::Co
   /// Determine which robot sent the map (i.e. determine its ID) and act on that knowledge.
   int id = getRobotID(msg->mac);
   // Inform the outside world of our reception.
-	ROS_INFO("Received a foreign map from %s, with mac %s, corresponding to id %d.", ip.c_str(), msg->mac.c_str(), id);
+  ROS_INFO("Received a foreign map from %s, with mac %s, corresponding to id %d.", ip.c_str(), msg->mac.c_str(), id);
   if(id == -1)
   {
     // We've never found this robot before!
@@ -103,11 +103,21 @@ void processForeignMap(std::string ip, const mrgs_data_interface::NetworkMap::Co
     id = g_peer_macs.size();                       // The new MAC will be added at the end of the vector
     g_peer_macs.push_back(msg->mac);               // Add new MAC
     mrgs_data_interface::ForeignMap::Ptr newMap(new mrgs_data_interface::ForeignMap);
-    //newMap->map.header.seq = 0;                    // Zero out unused info.
-    //newMap->map.header.frame_id = 0;
     newMap->robot_id = id;                         // Attribute the right id
     g_foreign_map_vector.push_back(newMap);        // Add a new, uninitialized map.
+    ROS_INFO("We've never met this guy before. His id is now %d. Vector sizes are %d and %d.", id, g_peer_macs.size(), g_foreign_map_vector.size());
   }
+  else
+  {
+    // This is a robot we've met before. Let's see is we already have this map. We're not interested in re-decompressing
+    // the same map.
+    if(g_foreign_map_vector.at(id)->map.header.stamp == msg->grid_stamp)
+    {
+      ROS_INFO("We already have this map. Skipping decompression.");
+      return;
+    }
+  }
+  
   
   /// Decompress data
   if(msg->decompressed_length > 0)  // Messages with this variable set to 0 are debug messages meant to test the network,
@@ -124,9 +134,12 @@ void processForeignMap(std::string ip, const mrgs_data_interface::NetworkMap::Co
     int decompressed_bytes = LZ4_decompress_safe(compressed, decompressed, msg->compressed_data.size(), msg->decompressed_length);
     
     /// Copy data to foreign map vector
+    // Copy metadata
     g_foreign_map_vector.at(id)->map.header.stamp = msg->grid_stamp;
     g_foreign_map_vector.at(id)->map.info = msg->info;
     g_foreign_map_vector.at(id)->map.data.clear();
+    // Pre-allocate and copy map
+    g_foreign_map_vector.at(id)->map.data.reserve(decompressed_bytes);
     for(int i = 0; i < decompressed_bytes; i++)
       g_foreign_map_vector.at(id)->map.data.push_back(decompressed[i]);
   }
@@ -174,11 +187,12 @@ void processMap(const nav_msgs::OccupancyGrid::ConstPtr& map)
   int compressed_bytes = LZ4_compress(decompressed, compressed, map_length);  // Compress
   // Store the new map
   g_publish_map->compressed_data.clear();
+  g_publish_map->compressed_data.reserve(compressed_bytes);
   for(int i = 0; i < compressed_bytes; i++)
     g_publish_map->compressed_data.push_back(compressed[i]);
     
   /// Inform
-  ROS_INFO("Processed a new local map. Size: %d bytes. Compressed size %d bytes. Ratio: %f", 
+  ROS_INFO("Processed a new local map. Size: %d bytes. Compressed size: %d bytes. Ratio: %f", 
            map_length, compressed_bytes, (float)map_length/(float)compressed_bytes);
 }
 
@@ -222,6 +236,9 @@ int main(int argc, char **argv)
     return -1;
   }
   
+  // Push an empty map into the foreign map vector, to keep it aligned with IDs.
+  mrgs_data_interface::ForeignMap::Ptr emptyMap(new mrgs_data_interface::ForeignMap);
+  g_foreign_map_vector.push_back(emptyMap);
   
   // Declare callbacks
   ros::Subscriber map = g_n->subscribe<nav_msgs::OccupancyGrid>("map", 1, processMap);

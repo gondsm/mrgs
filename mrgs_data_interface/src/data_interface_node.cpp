@@ -69,7 +69,7 @@ nav_msgs::OccupancyGrid::ConstPtr g_latest_local_map;
 // (at(0) is always our local mac)
 std::vector<std::string> g_peer_macs;
 // To be written by the processForeignMap callback
-std::vector<mrgs_data_interface::ForeignMap::ConstPtr> g_foreign_map_vector;
+std::vector<mrgs_data_interface::ForeignMap::Ptr> g_foreign_map_vector;
 // wifi_comm object
 wifi_comm::WiFiComm* g_my_comm;
 // Node handle. Must be global to be accessible by callbacks.
@@ -99,25 +99,21 @@ void processForeignMap(std::string ip, const mrgs_data_interface::NetworkMap::Co
   if(id == -1)
   {
     // We've never found this robot before!
-    // Add new robot to our list of peer macs
-    id = g_peer_macs.size();          // The new MAC will be added at the end of the vector
-    g_peer_macs.push_back(msg->mac);  // Add new MAC
+    // Add new robot to our list of peer macs and allocate space for its map.
+    id = g_peer_macs.size();                       // The new MAC will be added at the end of the vector
+    g_peer_macs.push_back(msg->mac);               // Add new MAC
+    mrgs_data_interface::ForeignMap::Ptr newMap(new mrgs_data_interface::ForeignMap);
+    //newMap->map.header.seq = 0;                    // Zero out unused info.
+    //newMap->map.header.frame_id = 0;
+    newMap->robot_id = id;                         // Attribute the right id
+    g_foreign_map_vector.push_back(newMap);        // Add a new, uninitialized map.
   }
-  
-  // DEBUG: Print our current list of macs
-  std::vector<std::string>::iterator i_mac_vector = g_peer_macs.begin();
-  int i = 0;
-  ROS_INFO("MACs we have already:");
-  do
-  {
-    ROS_INFO("%s", i_mac_vector->c_str());
-    i_mac_vector++;
-  } while(i_mac_vector != g_peer_macs.end());
   
   /// Decompress data
   if(msg->decompressed_length > 0)  // Messages with this variable set to 0 are debug messages meant to test the network,
                                     // vector management, etc...
   {
+    ROS_INFO("Received map consists of %d compressed bytes. Decompressing.", msg->compressed_data.size());
     // Allocate and populate compressed buffer
     char* compressed = new char[msg->compressed_data.size()];
     for(int i = 0; i < msg->compressed_data.size(); i++)
@@ -128,7 +124,11 @@ void processForeignMap(std::string ip, const mrgs_data_interface::NetworkMap::Co
     int decompressed_bytes = LZ4_decompress_safe(compressed, decompressed, msg->compressed_data.size(), msg->decompressed_length);
     
     /// Copy data to foreign map vector
-    // id is used as the vector's index
+    g_foreign_map_vector.at(id)->map.header.stamp = msg->grid_stamp;
+    g_foreign_map_vector.at(id)->map.info = msg->info;
+    g_foreign_map_vector.at(id)->map.data.clear();
+    for(int i = 0; i < decompressed_bytes; i++)
+      g_foreign_map_vector.at(id)->map.data.push_back(decompressed[i]);
   }
   else
     ROS_INFO("This is a debug map. No decompression took place.");
@@ -231,7 +231,7 @@ int main(int argc, char **argv)
   while(ros::ok())
   {
     // Publish external map
-    if(g_publish_map.use_count() == 0) // Only publish if the local, compressed, map exists.
+    if(g_latest_local_map.use_count() == 0) // Only publish if the local, compressed, map exists.
       ROS_DEBUG("No map to publish yet.");
     else
     {

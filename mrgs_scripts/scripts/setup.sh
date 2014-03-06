@@ -30,6 +30,11 @@ cd ..
 cd ..
 rm -rf olsrd
 
+# After these steps are taken, it's important to
+# sudo vim /etc/olsrd.conf
+# and uncomment the line
+# PlParam "port" "8080"
+
 # Pull multimaster_experimental
 svn co https://code.ros.org/svn/ros/stacks/multimaster_experimental/trunk ../../../multimaster_experimental
 

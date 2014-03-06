@@ -41,8 +41,7 @@
  * Summary:
  * 
  * Methodology:
- *  1. Receive maps and save them (all we have to do is spinOnce)
- *  2. Decide when maps are worth aligning (metric to be defined)
+ *  1. Receive maps
  *  3. Send them two by two to be aligned
  *  4. Publish the complete map
  * 
@@ -54,7 +53,7 @@
 #include <cstdlib>
 
 // Global variables
-// To be edited only by the /map callback
+// To be edited only by the processMap callback
 nav_msgs::OccupancyGrid::ConstPtr g_latest_local_map;
 // To be edited only by the /foreign_maps callback
 mrgs_data_interface::ForeignMapVector::ConstPtr g_latest_foreign_maps;

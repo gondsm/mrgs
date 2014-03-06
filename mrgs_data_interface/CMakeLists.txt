@@ -34,3 +34,7 @@ rosbuild_genmsg()
 rosbuild_add_library(lz4 src/lz4/lz4.c)
 rosbuild_add_executable(data_interface_node src/data_interface_node.cpp)
 target_link_libraries(data_interface_node lz4)
+
+# Uncomment to make the compression test executable
+rosbuild_add_executable(compression_test_node src/compression_test_node.cpp)
+target_link_libraries(compression_test_node lz4)

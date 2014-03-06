@@ -76,6 +76,8 @@ wifi_comm::WiFiComm* g_my_comm;
 ros::NodeHandle * g_n;
 // Global list of subscribers (also required by wifi_comm)
 std::vector<ros::Subscriber> subs;
+// To be written only by the processMap callback!
+mrgs_data_interface::NetworkMap::Ptr g_publish_map(new mrgs_data_interface::NetworkMap);
 
 inline int getRobotID(std:: string mac){
   // Find the desired MAC's index
@@ -149,8 +151,35 @@ void newRobotInNetwork(char * ip)
 
 void processMap(const nav_msgs::OccupancyGrid::ConstPtr& map)
 {
-  // We simply change our global pointer to point to the latest map. The smart pointer should take care of deallocation.
+  // This function processes a new local map. It updates the latest local map pointer and creates a new publish-able
+  // NetworkMap.
+  /// Update the local map
   g_latest_local_map = map;
+  
+  /// Create the new NetworkMap
+  // Fill in local mac
+  g_publish_map->mac = g_peer_macs.at(0);
+  // Indicate that it's a complete map
+  g_publish_map->is_complete = true;
+  // Fill in time stamp, metadata and decompressed length
+  g_publish_map->grid_stamp = map->header.stamp;
+  g_publish_map->info = map->info;
+  unsigned int map_length = g_publish_map-> info.height * g_publish_map-> info.width;
+  g_publish_map->decompressed_length = map_length;
+  // Compress the new map
+  char* compressed = new char [LZ4_compressBound(map_length)];                // We have to allocate this buffer with 
+  char* decompressed = new char [map_length];                                 // extra space, lest the data be 
+  for(int i = 0; i < map_length; i++)                                         // incompressible.
+    decompressed[i] = map->data.at(i);                                        // Copy data to compress.
+  int compressed_bytes = LZ4_compress(decompressed, compressed, map_length);  // Compress
+  // Store the new map
+  g_publish_map->compressed_data.clear();
+  for(int i = 0; i < compressed_bytes; i++)
+    g_publish_map->compressed_data.push_back(compressed[i]);
+    
+  /// Inform
+  ROS_INFO("Processed a new local map. Size: %d bytes. Compressed size %d bytes. Ratio: %f", 
+           map_length, compressed_bytes, (float)map_length/(float)compressed_bytes);
 }
 
 int main(int argc, char **argv)
@@ -199,12 +228,18 @@ int main(int argc, char **argv)
   
   // Regular execution: loop with spinOnce
   ros::Rate r(1);
-  mrgs_data_interface::NetworkMap msg;
-  msg.mac = g_peer_macs.at(0);
-  msg.decompressed_length = 0;  // Indicating this is a debug message
   while(ros::ok())
   {
-    external_map.publish(msg);
+    // Publish external map
+    if(g_publish_map.use_count() == 0) // Only publish if the local, compressed, map exists.
+      ROS_DEBUG("No map to publish yet.");
+    else
+    {
+      ROS_INFO("Publishing map...");
+      external_map.publish(*g_publish_map);
+    }
+    
+    // Spin and sleep
     ros::spinOnce();
     r.sleep();
   }

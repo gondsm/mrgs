@@ -33,7 +33,7 @@ rosbuild_gensrv()
 find_package(OpenCV)
 include_directories(${OpenCV_INCLUDE_DIRS})
 
-rosbuild_add_library(mapmerge src/common.cpp src/grid_map.cpp src/hough.cpp src/io.cpp src/manipulatemap.cpp)
+rosbuild_add_library(mapmerge src/mapmerge/common.cpp src/mapmerge/grid_map.cpp src/mapmerge/hough.cpp src/mapmerge/io.cpp src/mapmerge/manipulatemap.cpp)
 #rosbuild_add_executable(align src/align.cpp)
 rosbuild_add_executable(align_node src/align_node.cpp)
 rosbuild_add_executable(align_test src/align_test.cpp)

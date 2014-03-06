@@ -66,11 +66,11 @@
 #include "ros/console.h"
 
 // mapmerge includes
-#include "grid_map.h"
-#include "io.h"
-#include "common.h"
-#include "hough.h"
-#include "manipulatemap.h"
+#include "mapmerge/grid_map.h"
+#include "mapmerge/io.h"
+#include "mapmerge/common.h"
+#include "mapmerge/hough.h"
+#include "mapmerge/manipulatemap.h"
 #include <iterator>
 #include <iostream>
 #include <algorithm>

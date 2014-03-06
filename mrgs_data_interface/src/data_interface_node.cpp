@@ -127,7 +127,7 @@ void processForeignMap(std::string ip, const mrgs_data_interface::NetworkMap::Co
     // the same map.
     if(g_foreign_map_vector.at(id)->map.header.stamp == msg->grid_stamp)
     {
-      ROS_INFO("We already have this map. Skipping decompression. Processing foreign map took %fs.", (ros::Time::now() - init).toSec());
+      ROS_INFO("Repeated map, no need to decompress. Processing took %fs.", (ros::Time::now() - init).toSec());
       return;
     }
   }

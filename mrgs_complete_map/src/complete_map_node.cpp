@@ -53,10 +53,14 @@
 #include <cstdlib>
 
 // Global variables
-// To be edited only by the processMap callback
+// To be edited only by the processMap callback (we'll ignore this one for now and receive the local map via foreign map
+// vector).
 nav_msgs::OccupancyGrid::ConstPtr g_latest_local_map;
 // To be edited only by the /foreign_maps callback
 mrgs_data_interface::ForeignMapVector::ConstPtr g_latest_foreign_maps;
+// To be edited only by the processForeignMaps callback
+// Keeps the "dirtiness" (the need to be rebuilt) of aligned maps.
+std::vector<std::vector<bool>> g_is_dirty;
 
 void processMap(const nav_msgs::OccupancyGrid::ConstPtr& map)
 {
@@ -65,7 +69,34 @@ void processMap(const nav_msgs::OccupancyGrid::ConstPtr& map)
 
 void processForeignMaps(const mrgs_data_interface::ForeignMapVector::ConstPtr& maps)
 {
+  /// Determine which maps have to be rebuilt
+  // Compare sizes between the dirtiness matrix and the vector of maps we've received
+  if(g_is_dirty.at(0).size() < maps->map_vector.size())
+  {
+    // The set of maps we've received is bigger than the one we had.
+    // This is to be expected in the beginning of the mission, not so much towards the end.
+    // Increment the dirtiness matrix, marking all new cells as dirty.
+    while(g_is_dirty.at(0).size() < maps->map_vector.size())
+    {
+      // Increment one by one until we're at the right size?
+    }
+  }
+  else if(g_is_dirty.at(0).size() > maps->map_vector.size())
+  {
+    // Something is quite wrong, we should probably report it.
+  }
+  
+  // Check if the received maps have updates and mark as dirty accordingly
+  // Make the received maps our current maps
   g_latest_foreign_maps = maps;
+  
+  /// Rebuild maps
+  // Iterate through the dirtiness matrix, starting in row 1 (not 0), and rebuild 
+  // all maps which depend on a "dirty" map. Newly-built maps are also marked as "dirty".
+  // This process is repeated until we only have a single map to build, which will be our final map.
+  
+  /// Publish our new, shiny, complete map
+  // Use a latched topic, so that the last map is accessible to new subscribers.
 }
 
 int main(int argc, char **argv)
@@ -79,10 +110,11 @@ int main(int argc, char **argv)
   ros::Subscriber sub2 = n.subscribe("foreign_maps", 1, processForeignMaps);
   ros::Publisher pub1 = n.advertise<nav_msgs::OccupancyGrid>("complete_map", 10);
   
-  ros::Rate r(1/30.0);
+  //ros::Rate r(1/30.0);
   
   // ROS loop
-  while(ros::ok())
+  ros::spin();
+  /*while(ros::ok())
   {
     // Get all maps
     ros::spinOnce();
@@ -97,7 +129,7 @@ int main(int argc, char **argv)
       return 1;
     }*/
     r.sleep();
-  }
+  }*/
 
   
   return 0;

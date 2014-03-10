@@ -243,7 +243,9 @@ int main(int argc, char **argv)
   g_n = new ros::NodeHandle;
   
   // wifi_comm init
-  g_my_comm = new wifi_comm::WiFiComm(newRobotInNetwork);
+  boost::function<void (char *)> new_robot_callback;
+  new_robot_callback = newRobotInNetwork;
+  g_my_comm = new wifi_comm::WiFiComm(new_robot_callback);
   ros::Publisher external_map = g_n->advertise<mrgs_data_interface::NetworkMap>("external_map", 10);
   g_foreign_map_vector_publisher = g_n->advertise<mrgs_data_interface::ForeignMapVector>("foreign_maps", 10);
   

@@ -1,9 +1,6 @@
 <launch>
   <!-- wifi_comm node -->
-  <node name="wifi_discovery_node" pkg="wifi_comm" type="wifi_discovery_node">
-    <arg name="working_interface" default="wlan0"/>
-  </node>
+  <node name="wifi_discovery_node" pkg="wifi_comm" type="wifi_discovery_node" />
   <!-- mrgs_data_interface node-->
-  <node name="data_interface_node" pkg="mrgs_data_interface" type="data_interface_node" />
-
+  <node name="data_interface_node" pkg="mrgs_data_interface" type="data_interface_node" args="eth1" output="screen"/>
 </launch>

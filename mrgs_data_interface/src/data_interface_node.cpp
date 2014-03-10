@@ -112,7 +112,7 @@ void processForeignMap(std::string ip, const mrgs_data_interface::NetworkMap::Co
   /// Determine which robot sent the map (i.e. determine its ID) and act on that knowledge.
   int id = getRobotID(msg->mac);
   // Inform the outside world of our reception.
-  ROS_INFO("Received a foreign map from %s, with mac %s, corresponding to id %d.", ip.c_str(), msg->mac.c_str(), id);
+  ROS_INFO("Received a foreign map from %s, with mac %s, id %d.", ip.c_str(), msg->mac.c_str(), id);
   if(id == -1)
   {
     // We've never found this robot before!
@@ -164,10 +164,13 @@ void processForeignMap(std::string ip, const mrgs_data_interface::NetworkMap::Co
     ROS_DEBUG("This is a debug map. No decompression took place.");
   
   /// Publish foreign maps
-  ROS_DEBUG("Publishing foreign_map_vector...");
-  mrgs_data_interface::ForeignMapVector map_vector;
-  map_vector.map_vector = g_foreign_map_vector;
-  g_foreign_map_vector_publisher.publish(map_vector);
+  if(g_publish_map->compressed_data.size() == 0)
+  {
+    ROS_DEBUG("Publishing foreign_map_vector...");
+    mrgs_data_interface::ForeignMapVector map_vector;
+    map_vector.map_vector = g_foreign_map_vector;
+    g_foreign_map_vector_publisher.publish(map_vector);
+  }
   
   /// Inform
   ROS_INFO("Processing foreign map took %fs.", (ros::Time::now() - init).toSec());
@@ -176,7 +179,7 @@ void processForeignMap(std::string ip, const mrgs_data_interface::NetworkMap::Co
 void newRobotInNetwork(char * ip)
 {
   // Inform
-  ROS_DEBUG("Connecting to new peer at %s.", ip);
+  ROS_INFO("Connecting to new peer at %s.", ip);
   // Send
   g_my_comm->openForeignRelay(ip, "/external_map", true);
   //char topic1[128];

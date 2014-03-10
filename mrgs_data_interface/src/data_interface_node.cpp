@@ -75,7 +75,7 @@
 
 /// Global variables
 // To be written only by the processMap callback
-nav_msgs::OccupancyGrid::ConstPtr g_latest_local_map;
+//nav_msgs::OccupancyGrid::ConstPtr g_latest_local_map;
 // To be written only by the processForeignMap callback and once in main()
 // (at(0) is always our local mac)
 std::vector<std::string> g_peer_macs;
@@ -90,6 +90,8 @@ ros::NodeHandle * g_n;
 std::vector<ros::Subscriber> subs;
 // To be written only by the processMap callback!
 mrgs_data_interface::NetworkMap::Ptr g_publish_map(new mrgs_data_interface::NetworkMap);
+// To enable publishing from callback, to be edited once in main()
+ros::Publisher g_foreign_map_vector_publisher;
 
 inline int getRobotID(std:: string mac){
   // Find the desired MAC's index
@@ -160,7 +162,13 @@ void processForeignMap(std::string ip, const mrgs_data_interface::NetworkMap::Co
   }
   else
     ROS_DEBUG("This is a debug map. No decompression took place.");
-    
+  
+  /// Publish foreign maps
+  ROS_DEBUG("Publishing foreign_map_vector...");
+  mrgs_data_interface::ForeignMapVector map_vector;
+  map_vector.map_vector = g_foreign_map_vector;
+  g_foreign_map_vector_publisher.publish(map_vector);
+  
   /// Inform
   ROS_INFO("Processing foreign map took %fs.", (ros::Time::now() - init).toSec());
 }
@@ -189,7 +197,8 @@ void processMap(const nav_msgs::OccupancyGrid::ConstPtr& map)
   ros::Time init = ros::Time::now();
   
   /// Update the local map
-  g_latest_local_map = map;
+  //g_latest_local_map = map;
+  g_foreign_map_vector.at(0).map = *map;
   
   /// Create the new NetworkMap
   // Fill in local mac
@@ -236,6 +245,7 @@ int main(int argc, char **argv)
   // wifi_comm init
   g_my_comm = new wifi_comm::WiFiComm(newRobotInNetwork);
   ros::Publisher external_map = g_n->advertise<mrgs_data_interface::NetworkMap>("external_map", 10);
+  g_foreign_map_vector_publisher = g_n->advertise<mrgs_data_interface::ForeignMapVector>("foreign_maps", 10);
   
   // Retrieve local MAC address
   std::string* mac_file_path = new std::string(std::string("/sys/class/net/") + 
@@ -260,6 +270,7 @@ int main(int argc, char **argv)
   
   // Push an empty map into the foreign map vector, to keep it aligned with IDs.
   mrgs_data_interface::ForeignMap emptyMap;
+  emptyMap.robot_id = 0;
   g_foreign_map_vector.push_back(emptyMap);
   
   // Declare callbacks
@@ -270,7 +281,7 @@ int main(int argc, char **argv)
   while(ros::ok())
   {
     // Publish external map
-    if(g_latest_local_map.use_count() == 0) // Only publish if the local, compressed, map exists.
+    if(g_publish_map->compressed_data.size() == 0) // Only publish if the local, compressed, map exists.
       ROS_DEBUG("No map to publish yet.");
     else
     {

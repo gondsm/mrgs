@@ -88,9 +88,16 @@ void processForeignMaps(const mrgs_data_interface::ForeignMapVector::ConstPtr& m
   ROS_DEBUG("Allocated %d new rows.", i);
   
   /// Expand aligned map matrix (if needed)
-  if(g_aligned_maps.size() < g_is_dirty.size())
+  std::vector<nav_msgs::OccupancyGrid> empty_vec;
+  nav_msgs::OccupancyGrid empty_map;
+  while(g_aligned_maps.size() < g_is_dirty.size())
   {
-    
+    g_aligned_maps.push_back(empty_vec);
+  }
+  for(int i = 0; i < g_is_dirty.size()-1; i++)
+  {
+    while(g_aligned_maps.at(i).size() < g_is_dirty.at(i-1).size())
+      g_aligned_maps.at(i).push_back(empty_map);
   }
   
   /// Check if the received maps have updates and mark as dirty accordingly

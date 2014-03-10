@@ -179,6 +179,8 @@ void newRobotInNetwork(char * ip)
   ROS_DEBUG("Connecting to new peer at %s.", ip);
   // Send
   g_my_comm->openForeignRelay(ip, "/external_map", true);
+  //char topic1[128];
+  //g_my_comm->openForeignRelay(ip, "/external_map", wifi_comm::WiFiComm::concatTopicAndIp(topic1, "/external_map", ip));
   // Receive
   char topic[128];
   ros::Subscriber sub = g_n->subscribe<mrgs_data_interface::NetworkMap>(wifi_comm::WiFiComm::concatTopicAndIp(topic, "/external_map", ip),
@@ -287,7 +289,7 @@ int main(int argc, char **argv)
       ROS_DEBUG("No map to publish yet.");
     else
     {
-      ROS_DEBUG("Publishing map...");
+      ROS_INFO("Publishing map...");
       external_map.publish(*g_publish_map);
     }
     

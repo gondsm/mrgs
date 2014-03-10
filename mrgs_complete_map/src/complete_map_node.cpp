@@ -62,6 +62,8 @@ std::vector<std::vector<bool> > g_is_dirty;
 std::vector<std::vector<nav_msgs::OccupancyGrid> > g_aligned_maps;
 // To allow calls to service from callbacks
 ros::ServiceClient client;
+// To allow publishing from callbacks
+ros::Publisher pub1;
 
 void processForeignMaps(const mrgs_data_interface::ForeignMapVector::ConstPtr& maps)
 {
@@ -113,7 +115,7 @@ void processForeignMaps(const mrgs_data_interface::ForeignMapVector::ConstPtr& m
   {
     for(int i = 0; i < g_is_dirty.at(0).size(); i++)
     {
-      if(g_latest_map_times.at(i) < maps->map_vector.at(i).map.header.stamp)
+      if(g_latest_map_times.at(i) < maps->map_vector.at(i).map.header.stamp || i >= g_latest_map_times.size())
       {
         g_is_dirty.at(0).at(i) = true;
         ROS_INFO("Map %d is dirty.", i);
@@ -122,6 +124,10 @@ void processForeignMaps(const mrgs_data_interface::ForeignMapVector::ConstPtr& m
         g_is_dirty.at(0).at(i) = false;
     }
   }
+  
+  /// Renew out latest map times
+  for(int i = 0; i < maps->map_vector.size(); i++)
+    g_latest_map_times.at(i) = maps->map_vector.at(i).map.header.stamp;
   
   /// (Re-)Build maps
   // Iterate through the dirtiness matrix, starting in row 1 (not 0), and rebuild 
@@ -156,7 +162,7 @@ int main(int argc, char **argv)
   client = n.serviceClient<mrgs_alignment::align>("align");
   mrgs_alignment::align srv;
   ros::Subscriber sub2 = n.subscribe("foreign_maps", 1, processForeignMaps);
-  ros::Publisher pub1 = n.advertise<nav_msgs::OccupancyGrid>("complete_map", 10);
+  pub1 = n.advertise<nav_msgs::OccupancyGrid>("complete_map", 10);
   
   
   //ros::Rate r(1/30.0);

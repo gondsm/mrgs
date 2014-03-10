@@ -106,7 +106,7 @@ int main(int argc, char **argv)
   ros::NodeHandle n;
   ros::ServiceClient client = n.serviceClient<mrgs_alignment::align>("align");
   mrgs_alignment::align srv;
-  ros::Subscriber sub1 = n.subscribe("map", 1, processMap);
+  //ros::Subscriber sub1 = n.subscribe("map", 1, processMap);
   ros::Subscriber sub2 = n.subscribe("foreign_maps", 1, processForeignMaps);
   ros::Publisher pub1 = n.advertise<nav_msgs::OccupancyGrid>("complete_map", 10);
   

@@ -53,71 +53,47 @@
 #include <cstdlib>
 
 // Global variables
-// To be edited only by the processMap callback (we'll ignore this one for now and receive the local map via foreign map
-// vector).
-nav_msgs::OccupancyGrid::ConstPtr g_latest_local_map;
 // To be edited only by the /foreign_maps callback
-//mrgs_data_interface::ForeignMapVector::ConstPtr g_latest_foreign_maps;
-//std::vector<nav_msgs::MapMetaData> g_latest_map_info;
 std::vector<ros::Time> g_latest_map_times;
 // To be edited only by the processForeignMaps callback
 // Keeps the "dirtiness" (the need to be rebuilt) of aligned maps.
 std::vector<std::vector<bool> > g_is_dirty;
-
-void processMap(const nav_msgs::OccupancyGrid::ConstPtr& map)
-{
-  g_latest_local_map = map;
-}
+// To be edited by the processForeignMaps callback
+std::vector<std::vector<nav_msgs::OccupancyGrid> > g_aligned_maps;
+// To allow calls to service from callbacks
+ros::ServiceClient client;
 
 void processForeignMaps(const mrgs_data_interface::ForeignMapVector::ConstPtr& maps)
 {
   /// Inform
   ROS_INFO("Received a foreign map vector with %d maps.", maps->map_vector.size());
+  g_is_dirty.clear(); // This variable will later become local.
   
-  /// Allocate dirtiness matrix (first run)
-  if(g_is_dirty.size() == 0)
+  /// Allocate dirtiness matrix
+  ROS_INFO("Allocating dirtiness matrix...");
+  // Allocate first row
+  g_is_dirty.push_back(std::vector<bool>(maps->map_vector.size(), true));
+  // Allocate subsequent rows:
+  ROS_DEBUG("First row allocated. Allocating others...");
+  int i = 0;
+  do
   {
-    ROS_INFO("First run, allocating dirtiness matrix...");
-    // Allocate first row
-    g_is_dirty.push_back(std::vector<bool>(maps->map_vector.size(), true));
-    // Allocate subsequent rows:
-    ROS_INFO("First row allocated. Allocating others...");
-    int i = 0;
-    do
-    {
-      i++;
-      int prev_n = g_is_dirty.at(i-1).size();
-      int curr_n;
-      prev_n % 2 == 0? curr_n = prev_n/2:curr_n = (prev_n+1)/2;
-      g_is_dirty.push_back(std::vector<bool>(curr_n, true));
-      ROS_INFO("Allocated a new row with %d elements.", curr_n);
-    }while(g_is_dirty.at(i).size() > 1);
-    ROS_INFO("Allocated %d new rows.", i);
-  }
-  else if(g_is_dirty.at(0).size() < maps->map_vector.size())
+    i++;
+    int prev_n = g_is_dirty.at(i-1).size();
+    int curr_n;
+    prev_n % 2 == 0? curr_n = prev_n/2:curr_n = (prev_n+1)/2;
+    g_is_dirty.push_back(std::vector<bool>(curr_n, true));
+    ROS_DEBUG("Allocated a new row with %d elements.", curr_n);
+  }while(g_is_dirty.at(i).size() > 1);
+  ROS_DEBUG("Allocated %d new rows.", i);
+  
+  /// Expand aligned map matrix (if needed)
+  if(g_aligned_maps.size() < g_is_dirty.size())
   {
-    /// Determine which maps have to be rebuilt
-    // The set of maps we've received is bigger than the one we had.
-    // This is to be expected in the beginning of the mission, not so much towards the end.
-    // This implementation is now very efficient, but then again, we will very rarely execute this part.
     
-    // Increment the first row of the dirtiness matrix, marking all new cells as dirty.
-    while(g_is_dirty.at(0).size() < maps->map_vector.size())
-    {
-      // Increment one by one until we're at the right size
-      g_is_dirty.at(0).push_back(true);
-    }
-    
-    // Increment the other rows
-  }
-  else if(g_is_dirty.at(0).size() > maps->map_vector.size())
-  {
-    // Something is quite wrong, we should probably report it.
-    ROS_FATAL("Received a vector smaller than a previous one. Something is quite wrong. Aborting...");
-    return;
   }
   
-  // Check if the received maps have updates and mark as dirty accordingly
+  /// Check if the received maps have updates and mark as dirty accordingly
   if(g_latest_map_times.size()==0)
   {
     // There is no previous data, we're on the first run
@@ -140,10 +116,26 @@ void processForeignMaps(const mrgs_data_interface::ForeignMapVector::ConstPtr& m
     }
   }
   
-  /// Rebuild maps
+  /// (Re-)Build maps
   // Iterate through the dirtiness matrix, starting in row 1 (not 0), and rebuild 
   // all maps which depend on a "dirty" map. Newly-built maps are also marked as "dirty".
   // This process is repeated until we only have a single map to build, which will be our final map.
+  for(int i = 1; g_is_dirty.at(i).size() > 1; i++)
+  {
+    for(int j = 0; j < g_is_dirty.at(i).size(); j++)
+    {
+      // How many maps does this one depend on?
+      if(2*j == g_is_dirty.at(i-1).size() - 1)
+      {
+        // This map only depends on one other
+      }
+      else
+      {
+        // This map depends on two others.
+        // Are any of them dirty?
+      }
+    }
+  }
   
   /// Publish our new, shiny, complete map
   // Use a latched topic, so that the last map is accessible to new subscribers.
@@ -154,9 +146,8 @@ int main(int argc, char **argv)
   // ROS initialization
   ros::init(argc, argv, "complete_map_node");
   ros::NodeHandle n;
-  ros::ServiceClient client = n.serviceClient<mrgs_alignment::align>("align");
+  client = n.serviceClient<mrgs_alignment::align>("align");
   mrgs_alignment::align srv;
-  //ros::Subscriber sub1 = n.subscribe("map", 1, processMap);
   ros::Subscriber sub2 = n.subscribe("foreign_maps", 1, processForeignMaps);
   ros::Publisher pub1 = n.advertise<nav_msgs::OccupancyGrid>("complete_map", 10);
   

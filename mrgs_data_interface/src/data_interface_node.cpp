@@ -113,6 +113,7 @@ void processForeignMap(std::string ip, const mrgs_data_interface::NetworkMap::Co
   int id = getRobotID(msg->mac);
   // Inform the outside world of our reception.
   ROS_INFO("Received a foreign map from %s, with mac %s, id %d.", ip.c_str(), msg->mac.c_str(), id);
+  bool is_repeated = false;
   if(id == -1)
   {
     // We've never found this robot before!
@@ -130,14 +131,14 @@ void processForeignMap(std::string ip, const mrgs_data_interface::NetworkMap::Co
     // the same map.
     if(g_foreign_map_vector.at(id).map.header.stamp == msg->grid_stamp)
     {
-      ROS_INFO("Repeated map, no need to decompress. Processing took %fs.", (ros::Time::now() - init).toSec());
-      return;
+      ROS_DEBUG("Repeated map, no need to decompress. Processing took %fs.", (ros::Time::now() - init).toSec());
+      is_repeated = true;
     }
   }
   
   
   /// Decompress data
-  if(msg->decompressed_length > 0)  // Messages with this variable set to 0 are debug messages meant to test the network,
+  if(msg->decompressed_length > 0 && is_repeated == false)  // Messages with this variable set to 0 are debug messages meant to test the network,
                                     // vector management, etc...
   {
     ROS_DEBUG("Received map consists of %d compressed bytes. Decompressing.", msg->compressed_data.size());
@@ -161,10 +162,11 @@ void processForeignMap(std::string ip, const mrgs_data_interface::NetworkMap::Co
       g_foreign_map_vector.at(id).map.data.push_back(decompressed[i]);
   }
   else
-    ROS_DEBUG("This is a debug map. No decompression took place.");
+    ROS_DEBUG("This is a debug or repeated map. No decompression took place.");
   
   /// Publish foreign maps
-  if(g_publish_map->compressed_data.size() == 0)
+  // We only publish if the local map exists, so we don't send an empty map to the complete map node.
+  if(g_publish_map->compressed_data.size() != 0)
   {
     ROS_DEBUG("Publishing foreign_map_vector...");
     mrgs_data_interface::ForeignMapVector map_vector;
@@ -292,7 +294,7 @@ int main(int argc, char **argv)
       ROS_DEBUG("No map to publish yet.");
     else
     {
-      ROS_INFO("Publishing map...");
+      ROS_DEBUG("Publishing map...");
       external_map.publish(*g_publish_map);
     }
     

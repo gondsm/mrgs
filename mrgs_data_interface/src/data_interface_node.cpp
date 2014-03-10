@@ -80,7 +80,8 @@ nav_msgs::OccupancyGrid::ConstPtr g_latest_local_map;
 // (at(0) is always our local mac)
 std::vector<std::string> g_peer_macs;
 // To be written by the processForeignMap callback
-std::vector<mrgs_data_interface::ForeignMap::Ptr> g_foreign_map_vector;
+//std::vector<mrgs_data_interface::ForeignMap::Ptr> g_foreign_map_vector;
+std::vector<mrgs_data_interface::ForeignMap> g_foreign_map_vector;
 // wifi_comm object
 wifi_comm::WiFiComm* g_my_comm;
 // Node handle. Must be global to be accessible by callbacks.
@@ -116,8 +117,8 @@ void processForeignMap(std::string ip, const mrgs_data_interface::NetworkMap::Co
     // Add new robot to our list of peer macs and allocate space for its map.
     id = g_peer_macs.size();                       // The new MAC will be added at the end of the vector
     g_peer_macs.push_back(msg->mac);               // Add new MAC
-    mrgs_data_interface::ForeignMap::Ptr newMap(new mrgs_data_interface::ForeignMap);
-    newMap->robot_id = id;                         // Attribute the right id
+    mrgs_data_interface::ForeignMap newMap;
+    newMap.robot_id = id;                         // Attribute the right id
     g_foreign_map_vector.push_back(newMap);        // Add a new, uninitialized map.
     ROS_DEBUG("We've never met this guy before. His id is now %d. Vector sizes are %d and %d.", id, g_peer_macs.size(), g_foreign_map_vector.size());
   }
@@ -125,7 +126,7 @@ void processForeignMap(std::string ip, const mrgs_data_interface::NetworkMap::Co
   {
     // This is a robot we've met before. Let's see is we already have this map. We're not interested in re-decompressing
     // the same map.
-    if(g_foreign_map_vector.at(id)->map.header.stamp == msg->grid_stamp)
+    if(g_foreign_map_vector.at(id).map.header.stamp == msg->grid_stamp)
     {
       ROS_INFO("Repeated map, no need to decompress. Processing took %fs.", (ros::Time::now() - init).toSec());
       return;
@@ -149,13 +150,13 @@ void processForeignMap(std::string ip, const mrgs_data_interface::NetworkMap::Co
     
     /// Copy data to foreign map vector
     // Copy metadata
-    g_foreign_map_vector.at(id)->map.header.stamp = msg->grid_stamp;
-    g_foreign_map_vector.at(id)->map.info = msg->info;
-    g_foreign_map_vector.at(id)->map.data.clear();
+    g_foreign_map_vector.at(id).map.header.stamp = msg->grid_stamp;
+    g_foreign_map_vector.at(id).map.info = msg->info;
+    g_foreign_map_vector.at(id).map.data.clear();
     // Pre-allocate and copy map
-    g_foreign_map_vector.at(id)->map.data.reserve(decompressed_bytes);
+    g_foreign_map_vector.at(id).map.data.reserve(decompressed_bytes);
     for(int i = 0; i < decompressed_bytes; i++)
-      g_foreign_map_vector.at(id)->map.data.push_back(decompressed[i]);
+      g_foreign_map_vector.at(id).map.data.push_back(decompressed[i]);
   }
   else
     ROS_DEBUG("This is a debug map. No decompression took place.");
@@ -258,7 +259,7 @@ int main(int argc, char **argv)
   }
   
   // Push an empty map into the foreign map vector, to keep it aligned with IDs.
-  mrgs_data_interface::ForeignMap::Ptr emptyMap(new mrgs_data_interface::ForeignMap);
+  mrgs_data_interface::ForeignMap emptyMap;
   g_foreign_map_vector.push_back(emptyMap);
   
   // Declare callbacks

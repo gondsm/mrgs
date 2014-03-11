@@ -50,6 +50,7 @@
 #include "ros/ros.h"
 #include "mrgs_alignment/align.h"
 #include "mrgs_data_interface/ForeignMapVector.h"
+#include "mrgs_alignment/align.h"
 #include <cstdlib>
 
 // Global variables
@@ -125,9 +126,11 @@ void processForeignMaps(const mrgs_data_interface::ForeignMapVector::ConstPtr& m
     }
   }
   
-  /// Renew out latest map times
+  /// Renew our latest map times
+  g_latest_map_times.clear();
+  g_latest_map_times.reserve(maps->map_vector.size());
   for(int i = 0; i < maps->map_vector.size(); i++)
-    g_latest_map_times.at(i) = maps->map_vector.at(i).map.header.stamp;
+    g_latest_map_times.push_back(maps->map_vector.at(i).map.header.stamp);
   
   /// (Re-)Build maps
   // Iterate through the dirtiness matrix, starting in row 1 (not 0), and rebuild 
@@ -140,12 +143,47 @@ void processForeignMaps(const mrgs_data_interface::ForeignMapVector::ConstPtr& m
       // How many maps does this one depend on?
       if(2*j == g_is_dirty.at(i-1).size() - 1)
       {
-        // This map only depends on one other
+        // This map only depends on one other, so we simply pull it up
+        if(i == 1)
+        {
+          // First row, we must pull from the newly-received maps
+          g_aligned_maps.at(i-1).at(j) = maps->map_vector.at(2*j).map;
+        }
+        else
+        {
+          // Subsequent rows, we pull from the row beneath
+          g_aligned_maps.at(i-1).at(j) = g_aligned_maps.at(i-2).at(2*j);
+        }
       }
       else
       {
         // This map depends on two others.
         // Are any of them dirty?
+        if(g_is_dirty.at(i-1).at(2*j) || g_is_dirty.at(i-1).at((2*j)+1))
+        {
+          // Then the current map is dirty
+          g_is_dirty.at(i).at(j) = true;
+          // ... and we must reallign it
+          mrgs_alignment::align srv;
+          if(i == 1)
+          {
+            // We're on the first line, the source for maps is the vector we received
+            srv.request.map1 = maps->map_vector.at(2*j).map;
+            srv.request.map2 = maps->map_vector.at((2*j)+1).map;
+          }
+          else
+          {
+            srv.request.map1 = g_aligned_maps.at(i-2).at(2*j);
+            srv.request.map2 = g_aligned_maps.at(i-2).at((2*j)+1);
+          }
+          if(!client.call(srv)) ROS_FATAL("Error calling service!");
+          g_aligned_maps.at(i-1).at(j) = srv.response.merged_map;
+        }
+        else
+        {
+          // If not, we mark the current map as clean and proceed
+          g_is_dirty.at(i).at(j) = false;
+        }
       }
     }
   }

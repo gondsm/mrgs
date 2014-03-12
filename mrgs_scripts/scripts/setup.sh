@@ -39,7 +39,8 @@ rm -rf olsrd
 svn co https://code.ros.org/svn/ros/stacks/multimaster_experimental/trunk ../../../multimaster_experimental
 
 # Pull lse_communication
-svn co http://isr-uc-ros-pkg.googlecode.com/svn/stacks/lse_communication/trunk/lse_communication ../../../lse_communication
+#svn co http://isr-uc-ros-pkg.googlecode.com/svn/stacks/lse_communication/trunk/lse_communication ../../../lse_communication
+git clone https://bitbucket.org/gondsm/lse_communication.git ../../../lse_communication
 
 # Pull vslam
 svn co https://code.ros.org/svn/ros-pkg/stacks/vslam/trunk ../../../vslam

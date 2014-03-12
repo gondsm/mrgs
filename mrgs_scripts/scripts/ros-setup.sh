@@ -21,7 +21,7 @@ read -p "Press enter to install ROS."
 sudo apt-get install ros-fuerte-desktop-full python-rosinstall
 
 # Source ROS
-read -p "ROS installed (I think). Will now create a workspace and sanbox for you to drop this repository in. I'll even try to append a source command to you .bashrc! If you just wanted ROS, this is the time to CTRL+C."
+read -p "ROS installed (I think). Will now create a workspace and sanbox for you to drop this repository in. I'll even try to append a source command to your .bashrc! If you just wanted ROS, this is the time to CTRL+C."
 source /opt/ros/fuerte/setup.bash
 
 # Create workspace

@@ -27,6 +27,7 @@ source /opt/ros/fuerte/setup.bash
 # Create workspace
 mkdir ~/fuerte_workspace
 rosws init ~/fuerte_workspace /opt/ros/fuerte
+source ~/fuerte_workspace/setup.bash
 
 # Create sandbox
 mkdir ~/fuerte_workspace/gmartins

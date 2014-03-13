@@ -249,9 +249,9 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
     for(int j = 0; j < map_final_c; j++)
     {
       if(a.grid.at(i).at(j) == 255 || d.grid.at(i).at(j) == 255)
-        c.grid.at(i).at(j) = 0;
-      else if(a.grid.at(i).at(j) == 0 || d.grid.at(i).at(j) == 0) 
         c.grid.at(i).at(j) = 255;
+      else if(a.grid.at(i).at(j) == 0 || d.grid.at(i).at(j) == 0) 
+        c.grid.at(i).at(j) = 0;
       else
         c.grid.at(i).at(j) = 127;
     }
@@ -270,6 +270,8 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
   
   // Pack resulting map into response message
   res.merged_map.data.resize(map_final_r*map_final_c);
+  res.merged_map.info.resolution = req.map1.info.resolution;
+  res.merged_map.header.frame_id = "map";
   res.merged_map.info.width = map_final_r;
   res.merged_map.info.height = map_final_c;
   k = 0;

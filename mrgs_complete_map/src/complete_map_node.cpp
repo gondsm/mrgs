@@ -208,6 +208,7 @@ void processForeignMaps(const mrgs_data_interface::ForeignMapVector::ConstPtr& m
   /// Publish our new, shiny, complete map and report performance
   // Use a latched topic, so that the last map is accessible to new subscribers.
   ROS_DEBUG("Publishing new complete map.");
+  //g_aligned_maps.at(g_aligned_maps.size()-1).at(0).header.frame_id = "map";
   pub1.publish(g_aligned_maps.at(g_aligned_maps.size()-1).at(0));
   ROS_INFO("Map processing took %fs.", (ros::Time::now() - init).toSec());
 }

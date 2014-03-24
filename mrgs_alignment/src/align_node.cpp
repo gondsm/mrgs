@@ -228,7 +228,7 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
   // Get results (we only want one hypothesis, but we have to calculate several, or the results become invalid)
   int n_hypothesis = 4;
   // We're getting a segfault, but maps are arriving OK
-  std::vector<mapmerge::transformation> hyp = mapmerge::get_hypothesis(a,b,n_hypothesis,1,false);
+  std::vector<mapmerge::transformation> hyp = mapmerge::get_hypothesis_robust(a,b,n_hypothesis,1,false);
   ROS_DEBUG("Result: %f %d %d %d", hyp[0].ai, hyp[0].deltax, hyp[0].deltay, hyp[0].rotation);
   
   // Report performance

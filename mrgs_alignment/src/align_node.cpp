@@ -244,23 +244,81 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
   // Merge map
   // d contains the aligned map, c can contain the merged map.
   // We assume a and d have equal dimensions (a and b should have been padded to avoid losses in rotation)
+  unsigned int roi_top_row, roi_top_col, roi_bottom_row, roi_bottom_col;
+  bool in_roi = false;
   for(int i = 0; i < map_final_r; i++)
   {
     for(int j = 0; j < map_final_c; j++)
     {
       if(a.grid.at(i).at(j) == 255 || d.grid.at(i).at(j) == 255)
+      {
         c.grid.at(i).at(j) = 255;
+        if(in_roi == false)
+        {
+          in_roi = true;
+          roi_top_row = i;
+          roi_top_col = j;
+        }
+        else
+        {
+          roi_bottom_row = i;
+          if(j < roi_top_row)
+            roi_top_row = j;
+          if(j > roi_bottom_row)
+            roi_bottom_row = j;
+        }
+      }
       else if(a.grid.at(i).at(j) == 0 || d.grid.at(i).at(j) == 0) 
+      {
         c.grid.at(i).at(j) = 0;
+        if(in_roi == false)
+        {
+          in_roi = true;
+          roi_top_row = i;
+          roi_top_col = j;
+        }
+        else
+        {
+          roi_bottom_row = i;
+          if(j < roi_top_row)
+            roi_top_row = j;
+          if(j > roi_bottom_row)
+            roi_bottom_col = j;
+        }
+      }
       else
         c.grid.at(i).at(j) = 127;
+    }
+  }
+  
+  // Crop map
+  if(req.crop == true)
+  {
+    ROS_DEBUG("Cropping output map...");
+    ROS_INFO("(top_row, top_col) = (%d,%d), (bot_row, bot_col) = (%d,%d)", roi_top_row, roi_top_col, roi_bottom_row, roi_bottom_col);
+    ROS_INFO("Exit dimensions: (l,c) = (%d,%d)", roi_bottom_row-roi_top_row+1, roi_bottom_col - roi_top_col+1);
+    // We'll try to output the map to c, to avoid having to rewrite the subsequent code.
+    // Copy map:
+    d.resize_map(1,1);
+    mapmerge::translate_map(d, c, 0, 0);
+    c.resize_map(roi_bottom_row-roi_top_row+1, roi_bottom_col - roi_top_col+1);
+    int lin_i = 0, lin_j = 0;
+    for(int i = roi_top_row; i <= roi_bottom_row; i++)
+    {
+      lin_j = 0;
+      for(int j = roi_top_col; j <= roi_bottom_col; j++)
+      {
+        c.grid.at(lin_i).at(lin_j) = d.grid.at(i).at(j);
+        lin_j++;
+      }
+      lin_i++;
     }
   }
   
   // DEBUG: Write maps to disk for viewing
   //mapmerge::save_map_to_file(a, "/home/vsantos/lol/in1.png");
   //mapmerge::save_map_to_file(b, "/home/vsantos/lol/in2.png");
-  //mapmerge::save_map_to_file(d, "/home/vsantos/lol/out.png");
+  //mapmerge::save_map_to_file(c, "/home/vsantos/lol/out.png");
   
   // Write results to non-standard response message
   res.mapmerge_transform.index = hyp[0].ai;
@@ -272,8 +330,8 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
   res.merged_map.data.resize(map_final_r*map_final_c);
   res.merged_map.info.resolution = req.map1.info.resolution;
   res.merged_map.header.frame_id = "map";
-  res.merged_map.info.width = map_final_r;
-  res.merged_map.info.height = map_final_c;
+  res.merged_map.info.width = map_final_c;
+  res.merged_map.info.height = map_final_r;
   k = 0;
   for(int i = 0; i < c.get_rows(); i++)
   {
@@ -292,7 +350,7 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
         break;
       default:
         res.merged_map.data.at(k) = -1;
-        ROS_INFO("Found strange cell in map a at (%d,%d). Defaulting to unknown.", i, j);
+        ROS_DEBUG("Found strange cell in map c at (%d,%d). Defaulting to unknown.", i, j);
       }
       k++;
     }

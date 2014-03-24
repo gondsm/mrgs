@@ -244,13 +244,12 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
   // Merge map
   // d contains the aligned map, c can contain the merged map.
   // We assume a and d have equal dimensions (a and b should have been padded to avoid losses in rotation)
-  unsigned int roi_top_row, roi_top_col, roi_bottom_row, roi_bottom_col;
+  unsigned int roi_top_row = 0, roi_top_col = 0, roi_bottom_row = 0, roi_bottom_col = 0;
   bool in_roi = false, known_cell = false;
   for(int i = 0; i < map_final_r; i++)
   {
     for(int j = 0; j < map_final_c; j++)
     {
-      known_cell = false;
       c.grid.at(i).at(j) = 127;
       if(a.grid.at(i).at(j) == 255 || d.grid.at(i).at(j) == 255)
       {
@@ -283,6 +282,7 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
     }
   }
   // Crop map
+  // This section is not yet working.
   if(req.crop == true)
   {
     ROS_DEBUG("Cropping output map...");
@@ -311,7 +311,7 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
   // DEBUG: Write maps to disk for viewing
   //mapmerge::save_map_to_file(a, "/home/vsantos/lol/in1.png");
   //mapmerge::save_map_to_file(b, "/home/vsantos/lol/in2.png");
-  //mapmerge::save_map_to_file(c, "/home/vsantos/lol/out.png");
+  mapmerge::save_map_to_file(c, "/home/vsantos/lol/out.png");
   
   // Write results to non-standard response message
   res.mapmerge_transform.index = hyp[0].ai;

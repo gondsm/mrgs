@@ -245,32 +245,26 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
   // d contains the aligned map, c can contain the merged map.
   // We assume a and d have equal dimensions (a and b should have been padded to avoid losses in rotation)
   unsigned int roi_top_row, roi_top_col, roi_bottom_row, roi_bottom_col;
-  bool in_roi = false;
+  bool in_roi = false, known_cell = false;
   for(int i = 0; i < map_final_r; i++)
   {
     for(int j = 0; j < map_final_c; j++)
     {
+      known_cell = false;
+      c.grid.at(i).at(j) = 127;
       if(a.grid.at(i).at(j) == 255 || d.grid.at(i).at(j) == 255)
       {
         c.grid.at(i).at(j) = 255;
-        if(in_roi == false)
-        {
-          in_roi = true;
-          roi_top_row = i;
-          roi_top_col = j;
-        }
-        else
-        {
-          roi_bottom_row = i;
-          if(j < roi_top_row)
-            roi_top_row = j;
-          if(j > roi_bottom_row)
-            roi_bottom_row = j;
-        }
+        known_cell = true;
       }
-      else if(a.grid.at(i).at(j) == 0 || d.grid.at(i).at(j) == 0) 
+      if(a.grid.at(i).at(j) == 0 || d.grid.at(i).at(j) == 0) 
       {
         c.grid.at(i).at(j) = 0;
+        known_cell = true;
+      }
+      if(known_cell == true)
+      {
+        known_cell = false;
         if(in_roi == false)
         {
           in_roi = true;
@@ -280,17 +274,14 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
         else
         {
           roi_bottom_row = i;
-          if(j < roi_top_row)
-            roi_top_row = j;
+          if(j < roi_top_col)
+            roi_top_col = j;
           if(j > roi_bottom_row)
             roi_bottom_col = j;
         }
       }
-      else
-        c.grid.at(i).at(j) = 127;
     }
   }
-  
   // Crop map
   if(req.crop == true)
   {
@@ -313,6 +304,8 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
       }
       lin_i++;
     }
+    map_final_r = c.get_rows();
+    map_final_c = c.get_cols();
   }
   
   // DEBUG: Write maps to disk for viewing

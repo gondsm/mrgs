@@ -92,6 +92,8 @@ std::vector<ros::Subscriber> subs;
 mrgs_data_interface::NetworkMap::Ptr g_publish_map(new mrgs_data_interface::NetworkMap);
 // To enable publishing from callback, to be edited once in main()
 ros::Publisher g_foreign_map_vector_publisher;
+// Publisher for external map
+ros::Publisher * external_map;
 
 inline int getRobotID(std:: string mac){
   // Find the desired MAC's index
@@ -228,7 +230,9 @@ void processMap(const nav_msgs::OccupancyGrid::ConstPtr& map)
   g_publish_map->compressed_data.reserve(compressed_bytes);
   for(int i = 0; i < compressed_bytes; i++)
     g_publish_map->compressed_data.push_back(compressed[i]);
-    
+  // Publish
+  external_map->publish(*g_publish_map);
+  
   /// Inform
   ROS_INFO("Processed a new local map. Size: %d bytes. Compressed size: %d bytes. Ratio: %f", 
            map_length, compressed_bytes, (float)map_length/(float)compressed_bytes);
@@ -253,7 +257,7 @@ int main(int argc, char **argv)
   boost::function<void (char *)> new_robot_callback;
   new_robot_callback = newRobotInNetwork;
   g_my_comm = new wifi_comm::WiFiComm(new_robot_callback);
-  ros::Publisher external_map = g_n->advertise<mrgs_data_interface::NetworkMap>("external_map", 10);
+  *external_map = g_n->advertise<mrgs_data_interface::NetworkMap>("external_map", 10);
   g_foreign_map_vector_publisher = g_n->advertise<mrgs_data_interface::ForeignMapVector>("foreign_maps", 10);
   
   // Retrieve local MAC address
@@ -286,7 +290,7 @@ int main(int argc, char **argv)
   ros::Subscriber map = g_n->subscribe<nav_msgs::OccupancyGrid>("map", 1, processMap);
   
   // Regular execution: loop with spinOnce
-  ros::Rate r(1);
+  /*ros::Rate r(1);
   while(ros::ok())
   {
     // Publish external map
@@ -301,7 +305,8 @@ int main(int argc, char **argv)
     // Spin and sleep
     ros::spinOnce();
     r.sleep();
-  }
+  }*/
+  ros::spin();
   
 
   return 0;

@@ -101,7 +101,7 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
   }
   else
   {
-    ROS_WARN("Map dimensions are different. Padding is needed. This section is untested.");
+    ROS_DEBUG("Map dimensions are different. Padding is needed.");
     // Determine which operations to apply
     if(req.map1.info.height != req.map2.info.height)
     {
@@ -209,9 +209,7 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
   // Break if there are no occupied cells
   if(!exists_occupied1 || !exists_occupied2){
     ROS_ERROR("At least one of the provided grids contain no occupied cells. Terminating.");
-    res.mapmerge_transform.index = -1;
-    //mapmerge::save_map_to_file(temp_a, "/home/vsantos/lol/tempa.png");
-    //mapmerge::save_map_to_file(temp_b, "/home/vsantos/lol/tempb.png");  
+    res.mapmerge_transform.index = -1; 
     return true;
   }
 
@@ -227,7 +225,6 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
 
   // Get results (we only want one hypothesis, but we have to calculate several, or the results become invalid)
   int n_hypothesis = 4;
-  // We're getting a segfault, but maps are arriving OK
   std::vector<mapmerge::transformation> hyp = mapmerge::get_hypothesis(a,b,n_hypothesis,1,false);
   ROS_DEBUG("Result: %f %d %d %d", hyp[0].ai, hyp[0].deltax, hyp[0].deltay, hyp[0].rotation);
   
@@ -244,6 +241,7 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
   // Merge map
   // d contains the aligned map, c can contain the merged map.
   // We assume a and d have equal dimensions (a and b should have been padded to avoid losses in rotation)
+  // At the same time, we'll determine the region of interest, in case we want to crop.
   unsigned int roi_top_row = 0, roi_top_col = 0, roi_bottom_row = 0, roi_bottom_col = 0;
   bool in_roi = false, known_cell = false;
   for(int i = 0; i < map_final_r; i++)
@@ -285,7 +283,7 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
   // DEBUG: Write maps to disk for viewing
   //mapmerge::save_map_to_file(a, "/home/vsantos/lol/in1.png");
   //mapmerge::save_map_to_file(b, "/home/vsantos/lol/in2.png");
-  mapmerge::save_map_to_file(c, "/home/vsantos/lol/out.png");
+  //mapmerge::save_map_to_file(c, "/home/vsantos/lol/out.png");
   
   // Write results to non-standard response message
   res.mapmerge_transform.index = hyp[0].ai;
@@ -361,6 +359,7 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
       }
     }
   }
+  
   // Final report
   ROS_INFO("Results sent. Total service time was %fs.", (ros::Time::now()-init).toSec());
   

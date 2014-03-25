@@ -181,13 +181,14 @@ void processForeignMaps(const mrgs_data_interface::ForeignMapVector::ConstPtr& m
             // We're on the first line, the source for maps is the vector we received
             srv.request.map1 = maps->map_vector.at(2*j).map;
             srv.request.map2 = maps->map_vector.at((2*j)+1).map;
-            srv.request.crop = false;
+            srv.request.crop = true;
           }
           else
           {
+            ROS_ERROR("We shouldn't be here!");
             srv.request.map1 = g_aligned_maps.at(i-2).at(2*j);
             srv.request.map2 = g_aligned_maps.at(i-2).at((2*j)+1);
-            srv.request.crop = false;
+            srv.request.crop = true;
           }
           ROS_DEBUG("Sending request...");
           if(!client.call(srv)) 

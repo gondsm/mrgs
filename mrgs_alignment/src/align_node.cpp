@@ -275,37 +275,11 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
           roi_bottom_row = i;
           if(j < roi_top_col)
             roi_top_col = j;
-          if(j > roi_bottom_row)
+          if(j > roi_bottom_col)
             roi_bottom_col = j;
         }
       }
     }
-  }
-  // Crop map
-  // This section is not yet working.
-  if(req.crop == true)
-  {
-    ROS_DEBUG("Cropping output map...");
-    ROS_INFO("(top_row, top_col) = (%d,%d), (bot_row, bot_col) = (%d,%d)", roi_top_row, roi_top_col, roi_bottom_row, roi_bottom_col);
-    ROS_INFO("Exit dimensions: (l,c) = (%d,%d)", roi_bottom_row-roi_top_row+1, roi_bottom_col - roi_top_col+1);
-    // We'll try to output the map to c, to avoid having to rewrite the subsequent code.
-    // Copy map:
-    d.resize_map(1,1);
-    mapmerge::translate_map(d, c, 0, 0);
-    c.resize_map(roi_bottom_row-roi_top_row+1, roi_bottom_col - roi_top_col+1);
-    int lin_i = 0, lin_j = 0;
-    for(int i = roi_top_row; i <= roi_bottom_row; i++)
-    {
-      lin_j = 0;
-      for(int j = roi_top_col; j <= roi_bottom_col; j++)
-      {
-        c.grid.at(lin_i).at(lin_j) = d.grid.at(i).at(j);
-        lin_j++;
-      }
-      lin_i++;
-    }
-    map_final_r = c.get_rows();
-    map_final_c = c.get_cols();
   }
   
   // DEBUG: Write maps to disk for viewing
@@ -320,35 +294,73 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
   res.mapmerge_transform.angle = hyp[0].rotation;
   
   // Pack resulting map into response message
-  res.merged_map.data.resize(map_final_r*map_final_c);
-  res.merged_map.info.resolution = req.map1.info.resolution;
-  res.merged_map.header.frame_id = "map";
-  res.merged_map.info.width = map_final_c;
-  res.merged_map.info.height = map_final_r;
-  k = 0;
-  for(int i = 0; i < c.get_rows(); i++)
+  if(req.crop == false)
   {
-    for(int j = 0; j < c.get_cols();j++)
+    res.merged_map.data.resize(map_final_r*map_final_c);
+    res.merged_map.info.resolution = req.map1.info.resolution;
+    res.merged_map.header.frame_id = "map";
+    res.merged_map.info.width = map_final_c;
+    res.merged_map.info.height = map_final_r;
+    k = 0;
+    for(int i = 0; i < c.get_rows(); i++)
     {
-      switch(c.grid.at(i).at(j))
+      for(int j = 0; j < c.get_cols();j++)
       {
-      case 0:
-        res.merged_map.data.at(k) = 100;
-        break;
-      case 127:
-        res.merged_map.data.at(k) = -1;
-        break;
-      case 255:
-        res.merged_map.data.at(k) = 0;
-        break;
-      default:
-        res.merged_map.data.at(k) = -1;
-        ROS_DEBUG("Found strange cell in map c at (%d,%d). Defaulting to unknown.", i, j);
+        switch(c.grid.at(i).at(j))
+        {
+        case 0:
+          res.merged_map.data.at(k) = 100;
+          break;
+        case 127:
+          res.merged_map.data.at(k) = -1;
+          break;
+        case 255:
+          res.merged_map.data.at(k) = 0;
+          break;
+        default:
+          res.merged_map.data.at(k) = -1;
+          ROS_DEBUG("Found strange cell in map c at (%d,%d). Defaulting to unknown.", i, j);
+        }
+        k++;
       }
-      k++;
     }
   }
-  
+  else
+  {
+    map_final_r = roi_bottom_row-roi_top_row+1;
+    map_final_c = roi_bottom_col - roi_top_col+1;
+    res.merged_map.data.resize(map_final_r*map_final_c);
+    res.merged_map.info.resolution = req.map1.info.resolution;
+    res.merged_map.header.frame_id = "map";
+    res.merged_map.info.width = map_final_c;
+    res.merged_map.info.height = map_final_r;
+    k = 0;
+    for(int i = 0; i < c.get_rows(); i++)
+    {
+      for(int j = 0; j < c.get_cols();j++)
+      {
+        if(i >= roi_top_row && j >= roi_top_col && i <= roi_bottom_row && j <= roi_bottom_col)
+          {
+          switch(c.grid.at(i).at(j))
+          {
+          case 0:
+            res.merged_map.data.at(k) = 100;
+            break;
+          case 127:
+            res.merged_map.data.at(k) = -1;
+            break;
+          case 255:
+            res.merged_map.data.at(k) = 0;
+            break;
+          default:
+            res.merged_map.data.at(k) = -1;
+            ROS_DEBUG("Found strange cell in map c at (%d,%d). Defaulting to unknown.", i, j);
+          }
+          k++;
+        }
+      }
+    }
+  }
   // Final report
   ROS_INFO("Results sent. Total service time was %fs.", (ros::Time::now()-init).toSec());
   

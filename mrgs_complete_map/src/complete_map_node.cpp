@@ -124,7 +124,7 @@ void processForeignMaps(const mrgs_data_interface::ForeignMapVector::ConstPtr& m
   {
     for(int i = 0; i < g_is_dirty.at(0).size(); i++)
     {
-      if(g_latest_map_times.at(i) < maps->map_vector.at(i).map.header.stamp || i >= g_latest_map_times.size())
+      if(i >= g_latest_map_times.size() || g_latest_map_times.at(i) < maps->map_vector.at(i).map.header.stamp)
       {
         g_is_dirty.at(0).at(i) = true;
         ROS_DEBUG("Map %d is dirty.", i);
@@ -179,16 +179,17 @@ void processForeignMaps(const mrgs_data_interface::ForeignMapVector::ConstPtr& m
           if(i == 1)
           {
             // We're on the first line, the source for maps is the vector we received
+            ROS_DEBUG("Merging from the first line.");
             srv.request.map1 = maps->map_vector.at(2*j).map;
             srv.request.map2 = maps->map_vector.at((2*j)+1).map;
-            srv.request.crop = true;
+            srv.request.crop = false;
           }
           else
           {
-            ROS_ERROR("We shouldn't be here!");
+            ROS_DEBUG("Merging from a not-first line.");
             srv.request.map1 = g_aligned_maps.at(i-2).at(2*j);
             srv.request.map2 = g_aligned_maps.at(i-2).at((2*j)+1);
-            srv.request.crop = true;
+            srv.request.crop = false;
           }
           ROS_DEBUG("Sending request...");
           if(!client.call(srv)) 

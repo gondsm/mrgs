@@ -93,7 +93,7 @@ mrgs_data_interface::NetworkMap::Ptr g_publish_map(new mrgs_data_interface::Netw
 // To enable publishing from callback, to be edited once in main()
 ros::Publisher g_foreign_map_vector_publisher;
 // Publisher for external map
-ros::Publisher * external_map;
+ros::Publisher *external_map;
 
 inline int getRobotID(std:: string mac){
   // Find the desired MAC's index
@@ -252,13 +252,15 @@ int main(int argc, char **argv)
   // ROS init
   ros::init(argc, argv, "data_interface_node");
   g_n = new ros::NodeHandle;
-  
+
   // wifi_comm init
   boost::function<void (char *)> new_robot_callback;
   new_robot_callback = newRobotInNetwork;
   g_my_comm = new wifi_comm::WiFiComm(new_robot_callback);
+  external_map = new ros::Publisher;
   *external_map = g_n->advertise<mrgs_data_interface::NetworkMap>("external_map", 10);
   g_foreign_map_vector_publisher = g_n->advertise<mrgs_data_interface::ForeignMapVector>("foreign_maps", 10);
+  
   
   // Retrieve local MAC address
   std::string* mac_file_path = new std::string(std::string("/sys/class/net/") + 

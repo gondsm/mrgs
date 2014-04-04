@@ -1,7 +1,9 @@
 import subprocess               # For shell calls
 import sys                      # For command line arguments
 import time                     # So that we can wait
+import re			# regex
 from os.path import expanduser  # So that we can get to the home directory
+
 
 # We start by checking if an interface was passed via command line
 if len(sys.argv) < 2:
@@ -18,10 +20,12 @@ if sys.argv[1] != 'clean':
         interesting_lines = True
       else:
         # We've found our address!
-        ip = line[9:23]
-
+        #ip = line[9:23]
+	ip = re.findall( r'[0-9]+(?:\.[0-9]+){3}', line )
+        ip = ip[0]
   # We show the address to the user, and give them the choice of exiting right away if something's wrong
   print 'I think I\'ve found an ip: ' + ip + '. Next I\'ll check and correct .bashrc.\nIf the address looks like garbled mumbo jumbo, you have 3 seconds to CTRL+C.'
+  #print ip
   time.sleep(3)
 
 # We're going through the file twice, we only needed to go once...

@@ -16,3 +16,4 @@ mrgs_alignment/src/mrgs_alignment/
 mrgs_complete_map/src/mrgs_complete_map/
 mrgs_compression_test/src/mrgs_compression_test/
 mrgs_data_interface/src/mrgs_data_interface/
+mrgs_auxiliary_nodes/src/mrgs_auxiliary_nodes

@@ -12,7 +12,7 @@
   <depend package="std_msgs"/>
   <depend package="nav_msgs"/>
   <depend package="wifi_comm"/>
-
+  <depend package="tf"/>
 </package>
 
 

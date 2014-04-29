@@ -62,6 +62,7 @@
 #include "mrgs_data_interface/ForeignMap.h"
 #include "mrgs_data_interface/ForeignMapVector.h"
 #include "mrgs_data_interface/NetworkMap.h"
+#include "mrgs_data_interface/LatestRobotPose.h"
 
 /// LZ4 include:
 #include "lz4/lz4.h"
@@ -94,6 +95,7 @@ mrgs_data_interface::NetworkMap::Ptr g_publish_map(new mrgs_data_interface::Netw
 ros::Publisher g_foreign_map_vector_publisher;
 // Publisher for external map
 ros::Publisher *external_map;
+ros::Publisher external_poses;
 
 inline int getRobotID(std:: string mac){
   // Find the desired MAC's index
@@ -260,6 +262,7 @@ int main(int argc, char **argv)
   external_map = new ros::Publisher;
   *external_map = g_n->advertise<mrgs_data_interface::NetworkMap>("external_map", 10);
   g_foreign_map_vector_publisher = g_n->advertise<mrgs_data_interface::ForeignMapVector>("foreign_maps", 10);
+  external_poses = g_n->advertise<mrgs_data_interface::LatestRobotPose>("remote_nav/remote_poses", 10);
   
   
   // Retrieve local MAC address

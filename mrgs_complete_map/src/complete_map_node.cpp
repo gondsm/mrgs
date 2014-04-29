@@ -51,6 +51,7 @@
 #include "mrgs_alignment/align.h"
 #include "mrgs_data_interface/ForeignMapVector.h"
 #include "mrgs_alignment/align.h"
+#include "mrgs_complete_map/LatestMapTF.h"
 #include <cstdlib>
 
 // Global variables
@@ -65,6 +66,7 @@ std::vector<std::vector<nav_msgs::OccupancyGrid> > g_aligned_maps;
 ros::ServiceClient client;
 // To allow publishing from callbacks
 ros::Publisher pub1;
+ros::Publisher pub2;
 
 void processForeignMaps(const mrgs_data_interface::ForeignMapVector::ConstPtr& maps)
 {
@@ -227,6 +229,7 @@ int main(int argc, char **argv)
   mrgs_alignment::align srv;
   ros::Subscriber sub2 = n.subscribe("foreign_maps", 1, processForeignMaps);
   pub1 = n.advertise<nav_msgs::OccupancyGrid>("complete_map", 10);
+  pub2 = n.advertise<mrgs_complete_map::LatestMapTF>("remote_nav/remote_tf", 10);
   
   // ROS loop
   ros::spin();

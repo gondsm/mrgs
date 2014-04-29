@@ -187,10 +187,12 @@ void processForeignMap(std::string ip, const mrgs_data_interface::NetworkMap::Co
 void processNetworkPose(std::string ip, const mrgs_data_interface::NetworkPose::ConstPtr& new_pose)
 {
   // Publish received pose in a LatestRobotPose message
+  int local_id = getRobotID(new_pose->mac);
+  if(local_id == -1) return;  // We've never met this robot, we drop the message.
   mrgs_data_interface::LatestRobotPose latest_pose;
   latest_pose.transform = new_pose->transform;
   latest_pose.pose = new_pose->pose;
-  latest_pose.id = getRobotID(new_pose->mac);
+  latest_pose.id = local_id;
   g_latest_pose.publish(latest_pose);
 }
 

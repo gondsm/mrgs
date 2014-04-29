@@ -1,0 +1,17 @@
+<package>
+  <description brief="mrgs_auxiliary_nodes">
+
+     mrgs_auxiliary_nodes
+
+  </description>
+  <author>vsantos</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/mrgs_auxiliary_nodes</url>
+  <depend package="roscpp"/>
+  <depend package="std_msgs"/>
+  <depend package="mrgs_complete_map"/>
+
+</package>
+
+

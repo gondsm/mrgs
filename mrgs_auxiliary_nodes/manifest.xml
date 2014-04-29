@@ -10,7 +10,6 @@
   <url>http://ros.org/wiki/mrgs_auxiliary_nodes</url>
   <depend package="roscpp"/>
   <depend package="std_msgs"/>
-  <depend package="mrgs_complete_map"/>
   <depend package="tf"/>
 
 </package>

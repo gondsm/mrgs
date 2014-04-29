@@ -30,3 +30,4 @@ rosbuild_genmsg()
 #target_link_libraries(example ${PROJECT_NAME})
 
 rosbuild_add_executable(remote_nav_node src/remote_nav_node.cpp)
+rosbuild_add_executable(map_dam_node src/map_dam_node.cpp)

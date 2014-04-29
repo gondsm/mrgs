@@ -36,7 +36,7 @@
 *********************************************************************/
 
 /** 
- * remote_nav_node
+ * map_dam_node
  * 
  * Summary:
  * 
@@ -45,30 +45,22 @@
  */
 // ROS includes
 #include "ros/ros.h"
-#include "mrgs_complete_map/LatestMapTF.h"
-#include "mrgs_data_interface/LatestRobotPose.h"
+#include "nav_msgs/OccupancyGrid.h"
 #include <cstdlib>
 
 // Global variables
 
 
-void processTF(const mrgs_complete_map::LatestMapTF::ConstPtr& remote_pose)
+void processUnfilteredMap(const nav_msgs::OccupancyGrid::ConstPtr& unfiltered_map)
 {
 }
-
-void processPose(const mrgs_data_interface::LatestRobotPose::ConstPtr& remote_transform)
-{
-}
-
-
 
 int main(int argc, char **argv)
 {
   // ROS initialization
-  ros::init(argc, argv, "remote_nav_node");
+  ros::init(argc, argv, "remote_map_node");
   ros::NodeHandle n;
-  ros::Subscriber sub1 = n.subscribe("remote_nav/remote_poses", 10, processPose);
-  ros::Subscriber sub2 = n.subscribe("remote_nav/remote_tf", 10, processTF);
+  ros::Subscriber sub1 = n.subscribe("unfiltered_map", 10, processUnfilteredMap);
   
   // ROS loop
   ros::spin();

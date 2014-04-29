@@ -48,18 +48,18 @@
  */
 // ROS includes
 #include "ros/ros.h"
-#include "mrgs_auxiliary_nodes/LatestMapTF.h"
-#include "mrgs_auxiliary_nodes/LatestRobotPose.h"
+#include "mrgs_complete_map/LatestMapTF.h"
+#include "mrgs_data_interface/LatestRobotPose.h"
 #include <cstdlib>
 
 // Global variables
 
 
-void processPose(const mrgs_auxiliary_nodes::LatestMapTF::ConstPtr& remote_pose)
+void processPose(const mrgs_complete_map::LatestMapTF::ConstPtr& remote_pose)
 {
 }
 
-void processTF(const mrgs_auxiliary_nodes::LatestRobotPose::ConstPtr& remote_transform)
+void processTF(const mrgs_data_interface::LatestRobotPose::ConstPtr& remote_transform)
 {
 }
 

@@ -63,6 +63,7 @@
 #include "mrgs_data_interface/ForeignMapVector.h"
 #include "mrgs_data_interface/NetworkMap.h"
 #include "mrgs_data_interface/LatestRobotPose.h"
+#include "mrgs_data_interface/NetworkPose.h"
 
 /// LZ4 include:
 #include "lz4/lz4.h"
@@ -95,7 +96,8 @@ mrgs_data_interface::NetworkMap::Ptr g_publish_map(new mrgs_data_interface::Netw
 ros::Publisher g_foreign_map_vector_publisher;
 // Publisher for external map
 ros::Publisher *external_map;
-ros::Publisher external_poses;
+// Publisher for poses
+ros::Publisher g_latest_pose;
 
 inline int getRobotID(std:: string mac){
   // Find the desired MAC's index
@@ -182,12 +184,23 @@ void processForeignMap(std::string ip, const mrgs_data_interface::NetworkMap::Co
   ROS_INFO("Processing foreign map took %fs.", (ros::Time::now() - init).toSec());
 }
 
+void processNetworkPose(std::string ip, const mrgs_data_interface::NetworkPose::ConstPtr& new_pose)
+{
+  // Publish received pose in a LatestRobotPose message
+  mrgs_data_interface::LatestRobotPose latest_pose;
+  latest_pose.transform = new_pose->transform;
+  latest_pose.pose = new_pose->pose;
+  latest_pose.id = getRobotID(new_pose->mac);
+  g_latest_pose.publish(latest_pose);
+}
+
 void newRobotInNetwork(char * ip)
 {
   // Inform
   ROS_INFO("Connecting to new peer at %s.", ip);
   // Send
   g_my_comm->openForeignRelay(ip, "/external_map", true);
+  g_my_comm->openForeignRelay(ip, "/external_pose", true);
   //char topic1[128];
   //g_my_comm->openForeignRelay(ip, "/external_map", wifi_comm::WiFiComm::concatTopicAndIp(topic1, "/external_map", ip));
   // Receive
@@ -196,7 +209,12 @@ void newRobotInNetwork(char * ip)
                                                                         1,  // Number of messages to keep on the input queue 
                                                                         boost::bind(processForeignMap, 
                                                                         std::string(ip), _1));
+  ros::Subscriber sub2 = g_n->subscribe<mrgs_data_interface::NetworkPose>(wifi_comm::WiFiComm::concatTopicAndIp(topic, "/external_pose", ip),
+                                                                        3,  // Number of messages to keep on the input queue 
+                                                                        boost::bind(processNetworkPose, 
+                                                                        std::string(ip), _1));                                                                        
   subs.push_back(sub);
+  subs.push_back(sub2);
 }
 
 void processMap(const nav_msgs::OccupancyGrid::ConstPtr& map)
@@ -254,7 +272,7 @@ int main(int argc, char **argv)
   // ROS init
   ros::init(argc, argv, "data_interface_node");
   g_n = new ros::NodeHandle;
-
+  
   // wifi_comm init
   boost::function<void (char *)> new_robot_callback;
   new_robot_callback = newRobotInNetwork;
@@ -262,8 +280,7 @@ int main(int argc, char **argv)
   external_map = new ros::Publisher;
   *external_map = g_n->advertise<mrgs_data_interface::NetworkMap>("external_map", 10);
   g_foreign_map_vector_publisher = g_n->advertise<mrgs_data_interface::ForeignMapVector>("foreign_maps", 10);
-  external_poses = g_n->advertise<mrgs_data_interface::LatestRobotPose>("remote_nav/remote_poses", 10);
-  
+  g_latest_pose = g_n->advertise<mrgs_data_interface::LatestRobotPose>("remote_nav/remote_poses", 10);
   
   // Retrieve local MAC address
   std::string* mac_file_path = new std::string(std::string("/sys/class/net/") + 

@@ -47,17 +47,62 @@
 #include "ros/ros.h"
 #include "mrgs_complete_map/LatestMapTF.h"
 #include "mrgs_data_interface/LatestRobotPose.h"
+#include <tf/transform_broadcaster.h>
+#include "geometry_msgs/PoseStamped.h"
 #include <cstdlib>
 
 // Global variables
+// Node Handle
+ros::NodeHandle n;
+// Holds all current complete_map to map transforms
+std::vector<tf::StampedTransform*> g_map_transform_vector;
+// Holds all current map to odom transforms
+std::vector<tf::StampedTransform*> g_odom_transform_vector;
+// Holds all current odoms
+std::vector<geometry_msgs::Pose*> g_pose_vector;
+// Holds publishers for the odom topics
+std::vector<ros::Publisher*> g_odom_publisher_vector;
 
-
-void processTF(const mrgs_complete_map::LatestMapTF::ConstPtr& remote_pose)
+void processTF(const mrgs_complete_map::LatestMapTF::ConstPtr& remote_transform)
 {
+  // Same as processPose
+  if(g_map_transform_vector.size()-1 < remote_transform->id || g_map_transform_vector.at(remote_transform->id) == NULL)
+  {
+    while(g_map_transform_vector.size()-1 < remote_transform->id)
+      g_map_transform_vector.push_back(NULL);
+    g_map_transform_vector.at(remote_transform->id) = new tf::StampedTransform;
+  }
+  tf::transformStampedMsgToTF(remote_transform->transform, *g_map_transform_vector.at(remote_transform->id));
 }
 
-void processPose(const mrgs_data_interface::LatestRobotPose::ConstPtr& remote_transform)
+void processPose(const mrgs_data_interface::LatestRobotPose::ConstPtr& remote_pose)
 {
+  // Determine if this is a pose we already have
+  if(g_pose_vector.size()-1 < remote_pose->id || g_pose_vector.at(remote_pose->id) == NULL)
+  {
+    // If not, add it to the vector, and add its id to the id vector, and create a publisher
+    while(g_pose_vector.size()-1 < remote_pose->id)
+    {
+      g_pose_vector.push_back(NULL);
+      g_odom_publisher_vector.push_back(NULL);
+    }
+    g_pose_vector.at(remote_pose->id) = new geometry_msgs::Pose;
+    g_odom_publisher_vector.at(remote_pose->id) = new ros::Publisher;
+    char temp_topic[15];
+    sprintf(temp_topic, "robot_%d/pose", remote_pose->id);
+    *g_odom_publisher_vector.at(remote_pose->id) = n.advertise<geometry_msgs::PoseStamped>(temp_topic, 3);
+  }
+  *g_pose_vector.at(remote_pose->id) = remote_pose->pose;
+  
+  // Do the same for TF (kept separate lest some impossible case occur and we
+  // receive a pose without a TF. Technically, these are independent).
+  if(g_odom_transform_vector.size()-1 < remote_pose->id || g_odom_transform_vector.at(remote_pose->id) == NULL)
+  {
+    while(g_odom_transform_vector.size()-1 < remote_pose->id)
+      g_odom_transform_vector.push_back(NULL);
+    g_odom_transform_vector.at(remote_pose->id) = new tf::StampedTransform;
+  }
+  tf::transformStampedMsgToTF(remote_pose->transform, *g_odom_transform_vector.at(remote_pose->id));
 }
 
 
@@ -66,12 +111,20 @@ int main(int argc, char **argv)
 {
   // ROS initialization
   ros::init(argc, argv, "remote_nav_node");
-  ros::NodeHandle n;
   ros::Subscriber sub1 = n.subscribe("remote_nav/remote_poses", 10, processPose);
   ros::Subscriber sub2 = n.subscribe("remote_nav/remote_tf", 10, processTF);
   
   // ROS loop
-  ros::spin();
+  //ros::spin();
+  ros::Rate r(10);
+  while(ros::ok())
+  {
+    // Broadcast all current data:
+    //    Iterate through the various vectors, publishing data in the correct
+    //    topics and TF frames. Don't forget to correctly build the header for
+    //    the StampedPoses.
+    ros::spinOnce();
+  }
 
   // Never to be called
   return 0;

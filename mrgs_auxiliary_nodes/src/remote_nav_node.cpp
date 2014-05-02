@@ -39,9 +39,17 @@
  * remote_nav_node
  * 
  * Summary:
+ * This node ensures that TFs and poses are published into the internal network at the correct times.
  * 
  * Methodology:
- * 
+ * This node is responsible for publishing the following data:
+ * -> complete_map to local map (from each robot) TFs;
+ * -> local map (from each robot) to local odom TFs;
+ * -> remote poses.
+ * This information is published repeatedly at (desireably) 10Hz, even if no new info is received. The goal of this is
+ * to keep the TF tree alive with the latest information gathered in order to ensure the robot is always capable of
+ * transforming between its local complete map frame and the frames of every local map, as well as between those maps
+ * and the associated poses.
  */
 // ROS includes
 #include "ros/ros.h"
@@ -123,6 +131,27 @@ int main(int argc, char **argv)
     //    Iterate through the various vectors, publishing data in the correct
     //    topics and TF frames. Don't forget to correctly build the header for
     //    the StampedPoses.
+    for(int i = 0; i < g_map_transform_vector.size(); i++)
+    {
+      if(g_map_transform_vector.at(i) != NULL)
+      {
+      }
+    }
+    
+    for(int i = 0; i < g_odom_transform_vector.size(); i++)
+    {
+      if(g_odom_transform_vector.at(i) != NULL)
+      {
+      }
+    }
+    
+    for(int i = 0; i < g_pose_vector.size(); i++)
+    {
+      if(g_pose_vector.at(i) != NULL)
+      {
+      }
+    }
+    
     ros::spinOnce();
   }
 

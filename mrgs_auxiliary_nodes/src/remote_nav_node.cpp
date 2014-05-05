@@ -46,7 +46,8 @@
  * -> complete_map to local map (from each robot) TFs;
  * -> local map (from each robot) to local odom TFs;
  * -> remote poses.
- * This information is published repeatedly at (desireably) 10Hz, even if no new info is received. The goal of this is
+ * This information is published repeatedly at (desireably) 10Hz, even if no new info is received, and is meant to
+ * facilitate the visualization of the mission's progress. The relatively high rate of transmission is meant
  * to keep the TF tree alive with the latest information gathered in order to ensure the robot is always capable of
  * transforming between its local complete map frame and the frames of every local map, as well as between those maps
  * and the associated poses.

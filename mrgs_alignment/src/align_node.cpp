@@ -209,7 +209,7 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
   // Break if there are no occupied cells
   if(!exists_occupied1 || !exists_occupied2){
     ROS_ERROR("At least one of the provided grids contain no occupied cells. Terminating.");
-    res.mapmerge_transform.index = -1; 
+    res.success_coefficient = -1; 
     return true;
   }
 
@@ -286,10 +286,7 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
   //mapmerge::save_map_to_file(c, "/home/vsantos/lol/out.png");
   
   // Write results to non-standard response message
-  res.mapmerge_transform.index = hyp[0].ai;
-  res.mapmerge_transform.deltax = hyp[0].deltax;
-  res.mapmerge_transform.deltay = hyp[0].deltay;
-  res.mapmerge_transform.angle = hyp[0].rotation;
+  res.success_coefficient = hyp[0].ai;
   
   // Pack resulting map into response message
   if(req.crop == false)

@@ -136,11 +136,7 @@ int main(int argc, char **argv)
   // Service call
   if (client.call(srv))
   {
-    ROS_INFO("Received results: %f %d %d %d", 
-             srv.response.mapmerge_transform.index,
-             srv.response.mapmerge_transform.deltax, 
-             srv.response.mapmerge_transform.deltay,
-             srv.response.mapmerge_transform.angle);
+    ROS_INFO("Received results: %f", srv.response.success_coefficient);
   }
   else
   {

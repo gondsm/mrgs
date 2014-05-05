@@ -200,7 +200,7 @@ void processForeignMaps(const mrgs_data_interface::ForeignMapVector::ConstPtr& m
           {
             ROS_DEBUG("Got a response! Adding map to our matrix.");
             g_aligned_maps.at(i-1).at(j) = srv.response.merged_map;
-            ROS_WARN("Received index: %f", srv.response.mapmerge_transform.index);
+            ROS_WARN("Received index: %f", srv.response.success_coefficient);
           }
         }
         else

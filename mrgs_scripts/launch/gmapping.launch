@@ -1,4 +1,5 @@
 <launch>
+  <param name="use_sim_time" value="true" />
   <node name="gmapping" pkg="gmapping" type="slam_gmapping">
     <param name="particles" value="200" />
     <param name="resolution" value="0.05" />

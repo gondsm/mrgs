@@ -87,8 +87,8 @@
 bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response &res)
 {
   ros::Time init = ros::Time::now();
-  ROS_INFO("Alignment initiated.");
-  ROS_DEBUG("Received two grids. %dx%d and %dx%d.", req.map1.info.height, req.map1.info.width,
+  ROS_INFO("Received an alignment request. Alignment initiated.");
+  ROS_DEBUG("Dimensions (h x w): %dx%d and %dx%d.", req.map1.info.height, req.map1.info.width,
                                                    req.map2.info.height, req.map2.info.width);
                                                    
   // Determine if we need to add any padding
@@ -216,7 +216,7 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
   // Translate grids to re-center:
   mapmerge::grid_map a,b;
   mapmerge::translate_map(a, temp_a, -padding_rows, -padding_cols); // Why do we have to invert the translation input?
-  mapmerge::translate_map(b, temp_b, -padding_rows, -padding_cols); // oh well...
+  mapmerge::translate_map(b, temp_b, -padding_rows, -padding_cols);
 
 
   // Report performance
@@ -285,10 +285,7 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
   //mapmerge::save_map_to_file(b, "/home/vsantos/lol/in2.png");
   //mapmerge::save_map_to_file(c, "/home/vsantos/lol/out.png");
   
-  // Write results to non-standard response message
-  res.success_coefficient = hyp[0].ai;
-  
-  // Pack resulting map into response message
+  // Pack results into response message
   if(req.crop == false)
   {
     res.merged_map.data.resize(map_final_r*map_final_c);
@@ -356,6 +353,8 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
       }
     }
   }
+  res.success_coefficient = hyp[0].ai;
+  // Missing: pack transform into response.
   
   // Final report
   ROS_INFO("Results sent. Total service time was %fs.", (ros::Time::now()-init).toSec());

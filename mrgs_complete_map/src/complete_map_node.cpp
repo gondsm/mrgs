@@ -50,7 +50,6 @@
 #include "ros/ros.h"
 #include "mrgs_alignment/align.h"
 #include "mrgs_data_interface/ForeignMapVector.h"
-#include "mrgs_alignment/align.h"
 #include "mrgs_complete_map/LatestMapTF.h"
 #include <cstdlib>
 
@@ -63,7 +62,7 @@ std::vector<std::vector<bool> > g_is_dirty;
 // To be edited by the processForeignMaps callback
 std::vector<std::vector<nav_msgs::OccupancyGrid> > g_aligned_maps;
 // To allow calls to service from callbacks
-ros::ServiceClient client;
+ros::ServiceClient g_client;
 // To allow publishing from callbacks
 ros::Publisher pub1;
 ros::Publisher pub2;
@@ -194,7 +193,7 @@ void processForeignMaps(const mrgs_data_interface::ForeignMapVector::ConstPtr& m
             srv.request.crop = false;
           }
           ROS_DEBUG("Sending request...");
-          if(!client.call(srv)) 
+          if(!g_client.call(srv)) 
             ROS_FATAL("Error calling service!");
           else
           {
@@ -225,7 +224,7 @@ int main(int argc, char **argv)
   // ROS initialization
   ros::init(argc, argv, "complete_map_node");
   ros::NodeHandle n;
-  client = n.serviceClient<mrgs_alignment::align>("align");
+  g_client = n.serviceClient<mrgs_alignment::align>("align");
   mrgs_alignment::align srv;
   ros::Subscriber sub2 = n.subscribe("foreign_maps", 1, processForeignMaps);
   pub1 = n.advertise<nav_msgs::OccupancyGrid>("complete_map", 10);

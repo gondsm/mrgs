@@ -40,9 +40,10 @@
  * 
  * Summary:
  * This node receives, via ROS service, a pair of occupancy grids, and returns a single, aligned and merged, grid.
- * It also returns the transformation returned by Stefano Carpin's algorithm, mapmerge, including the acceptance index,
- * which may be of interest to detect if the alignment was successful.
- * In the future, we may only return the grid and 
+ * This node applies the algorithm developed by Stefano Carpin and presented on his papers from 2007 and 2008 (cited on
+ * my thesis).
+ * I've been careful to ensure that this node communicates via standard ROS datatypes, so that it is easily swapped by
+ * another available map fusion technique.
  * 
  * Methodology:
  *    1. Calculate how large the mapmerge grids must be in order to accomodate the incoming OccupancyGrids, and also for 
@@ -52,12 +53,11 @@
  * lose any information in rotation since rotations are done around the grid's center). We must also check for the
  * existence of at least one occupied cell in each map, or we'll get a segfault.
  *    3. Feed the copied grids into the algorithm.
- *    4. (TODO) Reject results if acceptance index is below a defined threshold.
- *    5. Apply the suggested rotation.
- *    6. (TODO) Determine if the to-be-translation will cause loss of data, and if so, accordingly pad the receiving map
+ *    4. Apply the suggested rotation.
+ *    5. (TODO) Determine if the to-be-translation will cause loss of data, and if so, accordingly pad the receiving map
  * in the necessary direction.
- *    7. Apply the suggested translation.
- *    8. Pack results into response message.
+ *    6. Apply the suggested translation.
+ *    7. Pack results into response message.
  */
 
 // ROS includes

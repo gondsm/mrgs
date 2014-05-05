@@ -39,8 +39,11 @@
  * map_dam_node
  * 
  * Summary:
+ * This node is responsible for deciding whether or not to introduce a new local map into the internal network, in order
+ * to avoid overloading it if a SLAM technique decides to publish maps very frequently.
  * 
  * Methodology:
+ * The node intercepts the /map topic and publishes a new topic, which the data interface subscribes to.
  * 
  */
 // ROS includes
@@ -60,7 +63,7 @@ int main(int argc, char **argv)
   // ROS initialization
   ros::init(argc, argv, "remote_map_node");
   ros::NodeHandle n;
-  ros::Subscriber sub1 = n.subscribe("unfiltered_map", 10, processUnfilteredMap);
+  ros::Subscriber sub1 = n.subscribe("map", 10, processUnfilteredMap);
   
   // ROS loop
   ros::spin();

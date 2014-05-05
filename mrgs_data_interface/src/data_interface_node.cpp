@@ -77,6 +77,7 @@
 #include "nav_msgs/OccupancyGrid.h"
 #include "nav_msgs/Odometry.h"
 #include "geometry_msgs/Pose.h"
+#include "tf/transform_listener.h"
 
 /// Include our messages
 #include "mrgs_data_interface/ForeignMap.h"
@@ -206,6 +207,7 @@ void processForeignMap(std::string ip, const mrgs_data_interface::NetworkMap::Co
 void processNetworkPose(std::string ip, const mrgs_data_interface::NetworkPose::ConstPtr& new_pose)
 {
   // Publish received pose in a LatestRobotPose message
+  ROS_INFO("Received a new pose from the network.");
   int local_id = getRobotID(new_pose->mac);
   if(local_id == -1) return;  // We've never met this robot, we drop the message.
   mrgs_data_interface::LatestRobotPose latest_pose;
@@ -285,8 +287,25 @@ void processOdom(const nav_msgs::Odometry::ConstPtr& odom)
   // We'll use 5 seconds as a base time between pose transmission.
   if(ros::Time::now() - g_since_last_pose > ros::Duration(5.0))
   {
+    // Check if transform exists. If not, we return
+    tf::TransformListener tf_listener;
+    if(!tf_listener.canTransform("/odom", "/map", ros::Time::now()))
+    {
+      ROS_INFO("Could not obtain transform, won't publish new pose.");
+      return;
+    }
+    
+    // Write data to new message
+    mrgs_data_interface::NetworkPose new_pose;
+    new_pose.mac = g_peer_macs.at(0);
+    new_pose.pose = odom->pose.pose;
+    tf::StampedTransform new_tf;
+    tf_listener.lookupTransform("/odom", "/map", ros::Time::now(), new_tf);
+    tf::transformStampedTFToMsg(new_tf, new_pose.transform);
+    
+    // Publish
     ROS_INFO("Publishing new pose into network.");
-    g_external_pose.publish(odom->pose.pose);
+    g_external_pose.publish(new_pose);
   }
 }
 
@@ -313,7 +332,7 @@ int main(int argc, char **argv)
   g_foreign_map_vector_publisher = g_n->advertise<mrgs_data_interface::ForeignMapVector>("foreign_maps", 10);
   g_latest_pose = g_n->advertise<mrgs_data_interface::LatestRobotPose>("remote_nav/remote_poses", 10);
   g_since_last_pose = ros::Time::now();
-  g_external_pose = g_n->advertise<geometry_msgs::Pose>("external_pose", 10);
+  g_external_pose = g_n->advertise<mrgs_data_interface::NetworkPose>("external_pose", 10);
   
   // Retrieve local MAC address
   std::string* mac_file_path = new std::string(std::string("/sys/class/net/") + 

@@ -74,13 +74,16 @@
 
 /// ROS includes
 #include "ros/ros.h"
+#include "nav_msgs/OccupancyGrid.h"
+#include "nav_msgs/Odometry.h"
+#include "geometry_msgs/Pose.h"
+
+/// Include our messages
 #include "mrgs_data_interface/ForeignMap.h"
 #include "mrgs_data_interface/ForeignMapVector.h"
 #include "mrgs_data_interface/NetworkMap.h"
 #include "mrgs_data_interface/LatestRobotPose.h"
 #include "mrgs_data_interface/NetworkPose.h"
-#include "nav_msgs/OccupancyGrid.h"
-#include "nav_msgs/Odometry.h"
 
 /// LZ4 include:
 #include "lz4/lz4.h"
@@ -114,6 +117,8 @@ ros::Publisher *g_external_map;
 ros::Publisher g_latest_pose;
 // Publisher for poses to other robots
 ros::Publisher g_external_pose;
+// Time at which the last pose transmission occurred
+ros::Time g_since_last_pose;
 
 inline int getRobotID(std:: string mac){
   // Find the desired MAC's index
@@ -190,7 +195,7 @@ void processForeignMap(std::string ip, const mrgs_data_interface::NetworkMap::Co
   {
     ROS_DEBUG("Publishing foreign_map_vector...");
     mrgs_data_interface::ForeignMapVector map_vector;
-    map_vector.map_vector = g_foreign_map_vector;
+    map_vector.map_vector = g_foreign_map_vector; // This is a potential time sink, depending on how the copy is handled.
     g_foreign_map_vector_publisher.publish(map_vector);
   }
   
@@ -255,9 +260,9 @@ void processMap(const nav_msgs::OccupancyGrid::ConstPtr& map)
   unsigned int map_length = g_publish_map-> info.height * g_publish_map-> info.width;
   g_publish_map->decompressed_length = map_length;
   // Compress the new map
-  char* compressed = new char [LZ4_compressBound(map_length)];                // We have to allocate this buffer with 
-  char* decompressed = new char [map_length];                                 // extra space, lest the data be 
-  for(int i = 0; i < map_length; i++)                                         // incompressible.
+  char* compressed = new char [LZ4_compressBound(map_length)];              // We have to allocate this buffer with 
+  char* decompressed = new char [map_length];                               // extra space, lest the data be 
+  for(int i = 0; i < map_length; i++)                                        // incompressible.
     decompressed[i] = map->data.at(i);                                        // Copy data to compress.
   int compressed_bytes = LZ4_compress(decompressed, compressed, map_length);  // Compress
   // Store the new map
@@ -276,6 +281,13 @@ void processMap(const nav_msgs::OccupancyGrid::ConstPtr& map)
 
 void processOdom(const nav_msgs::Odometry::ConstPtr& odom)
 {
+  // Check how long ago we've published a pose into the network. If sufficient time has passed, we publish a new one.
+  // We'll use 5 seconds as a base time between pose transmission.
+  if(ros::Time::now() - g_since_last_pose > ros::Duration(5.0))
+  {
+    ROS_INFO("Publishing new pose into network.");
+    g_external_pose.publish(odom->pose.pose);
+  }
 }
 
 int main(int argc, char **argv)
@@ -300,6 +312,8 @@ int main(int argc, char **argv)
   *g_external_map = g_n->advertise<mrgs_data_interface::NetworkMap>("external_map", 10);
   g_foreign_map_vector_publisher = g_n->advertise<mrgs_data_interface::ForeignMapVector>("foreign_maps", 10);
   g_latest_pose = g_n->advertise<mrgs_data_interface::LatestRobotPose>("remote_nav/remote_poses", 10);
+  g_since_last_pose = ros::Time::now();
+  g_external_pose = g_n->advertise<geometry_msgs::Pose>("external_pose", 10);
   
   // Retrieve local MAC address
   std::string* mac_file_path = new std::string(std::string("/sys/class/net/") + 

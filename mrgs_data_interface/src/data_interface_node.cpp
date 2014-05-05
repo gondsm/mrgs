@@ -39,9 +39,11 @@
  * data_interface_node:
  * 
  * Summary:
- * This node is responsible of keeping track of all the topics we must subscribe to in order to communicate with other
- * robots, as well as keeping local copies of foreign maps and propagating those maps in a standardized way across
- * our local system. This node is also responsible for propagating our local maps throughout the network.
+ * Essentially, this node is charged with all the communication between robots, and with converting between datatypes 
+ * used for external and internal communication.
+ * This node is responsible for: keeping track of all the topics we must subscribe to in order to communicate with other
+ * robots; keeping local copies of foreign maps transforms and poses; propagating those in a standardized way across
+ * our local system; transmitting the latest local map, relevant transform and pose across the network.
  * 
  * Methodology:
  * This node maintains a multitude of global variables that, together, represent the current state of the operation, as
@@ -55,6 +57,19 @@
  * -> g_publish_map: An external map, for publishing in the network connecting multiple robots.
  * These variables are only written to on very very well determined moments, to prevent race conditions and other data-
  * -related issues.
+ * I'm sure that with sufficient time, a few of these could be converted into local variables of some sort. However, in
+ * order to complete this project in time, I have opted to combine this approach with programming discipline to ensure
+ * there are no issues with using these variables. To any possible future maintaineres, austerity is advised in modify-
+ * ing the way these variables interact with the remaining program.
+ * 
+ * Data Structures:
+ * -> ForeignMap: A map received from another robot.
+ * -> ForeignMapVector: A vector with a foreign map for each robot we know.
+ * -> NetworkMap: The datatype that flows across the network. Contains a compressed map that is decompressed into a 
+ * foreign map.
+ * -> LatestRobotPose: A Pose including the robot's ID, for transmission into the internal network.
+ * -> NetworkPose: The datatype that carries poses on the network. It is simply a pose with the sending robot's MAC
+ * address attached.
  */
 
 /// ROS includes
@@ -64,6 +79,8 @@
 #include "mrgs_data_interface/NetworkMap.h"
 #include "mrgs_data_interface/LatestRobotPose.h"
 #include "mrgs_data_interface/NetworkPose.h"
+#include "nav_msgs/OccupancyGrid.h"
+#include "nav_msgs/Odometry.h"
 
 /// LZ4 include:
 #include "lz4/lz4.h"
@@ -76,28 +93,27 @@
 #include <fstream>
 
 /// Global variables
-// To be written only by the processMap callback
-//nav_msgs::OccupancyGrid::ConstPtr g_latest_local_map;
-// To be written only by the processForeignMap callback and once in main()
+// To be written only by the processForeignMap callback (and once in main() for initialization)
 // (at(0) is always our local mac)
 std::vector<std::string> g_peer_macs;
 // To be written by the processForeignMap callback
-//std::vector<mrgs_data_interface::ForeignMap::Ptr> g_foreign_map_vector;
 std::vector<mrgs_data_interface::ForeignMap> g_foreign_map_vector;
 // wifi_comm object
 wifi_comm::WiFiComm* g_my_comm;
 // Node handle. Must be global to be accessible by callbacks.
-ros::NodeHandle * g_n;
+ros::NodeHandle *g_n;
 // Global list of subscribers (also required by wifi_comm)
-std::vector<ros::Subscriber> subs;
+std::vector<ros::Subscriber> g_subs;
 // To be written only by the processMap callback!
 mrgs_data_interface::NetworkMap::Ptr g_publish_map(new mrgs_data_interface::NetworkMap);
 // To enable publishing from callback, to be edited once in main()
 ros::Publisher g_foreign_map_vector_publisher;
-// Publisher for external map
-ros::Publisher *external_map;
-// Publisher for poses
+// Publisher for external map (map that goes into the external network)
+ros::Publisher *g_external_map;
+// Publisher for poses from other robots
 ros::Publisher g_latest_pose;
+// Publisher for poses to other robots
+ros::Publisher g_external_pose;
 
 inline int getRobotID(std:: string mac){
   // Find the desired MAC's index
@@ -124,11 +140,11 @@ void processForeignMap(std::string ip, const mrgs_data_interface::NetworkMap::Co
   {
     // We've never found this robot before!
     // Add new robot to our list of peer macs and allocate space for its map.
-    id = g_peer_macs.size();                       // The new MAC will be added at the end of the vector
-    g_peer_macs.push_back(msg->mac);               // Add new MAC
+    id = g_peer_macs.size();                      // The new MAC will be added at the end of the vector
+    g_peer_macs.push_back(msg->mac);              // Add new MAC
     mrgs_data_interface::ForeignMap newMap;
     newMap.robot_id = id;                         // Attribute the right id
-    g_foreign_map_vector.push_back(newMap);        // Add a new, uninitialized map.
+    g_foreign_map_vector.push_back(newMap);       // Add a new, uninitialized map.
     ROS_DEBUG("We've never met this guy before. His id is now %d. Vector sizes are %d and %d.", id, g_peer_macs.size(), g_foreign_map_vector.size());
   }
   else
@@ -142,10 +158,8 @@ void processForeignMap(std::string ip, const mrgs_data_interface::NetworkMap::Co
     }
   }
   
-  
   /// Decompress data
-  if(msg->decompressed_length > 0 && is_repeated == false)  // Messages with this variable set to 0 are debug messages meant to test the network,
-                                    // vector management, etc...
+  if(msg->decompressed_length > 0 && is_repeated == false)  // Messages with decompressed_length == 0 are test messages.
   {
     ROS_DEBUG("Received map consists of %d compressed bytes. Decompressing.", msg->compressed_data.size());
     // Allocate and populate compressed buffer
@@ -215,8 +229,8 @@ void newRobotInNetwork(char * ip)
                                                                         3,  // Number of messages to keep on the input queue 
                                                                         boost::bind(processNetworkPose, 
                                                                         std::string(ip), _1));                                                                        
-  subs.push_back(sub);
-  subs.push_back(sub2);
+  g_subs.push_back(sub);
+  g_subs.push_back(sub2);
 }
 
 void processMap(const nav_msgs::OccupancyGrid::ConstPtr& map)
@@ -228,7 +242,6 @@ void processMap(const nav_msgs::OccupancyGrid::ConstPtr& map)
   ros::Time init = ros::Time::now();
   
   /// Update the local map
-  //g_latest_local_map = map;
   g_foreign_map_vector.at(0).map = *map;
   
   /// Create the new NetworkMap
@@ -253,12 +266,16 @@ void processMap(const nav_msgs::OccupancyGrid::ConstPtr& map)
   for(int i = 0; i < compressed_bytes; i++)
     g_publish_map->compressed_data.push_back(compressed[i]);
   // Publish
-  external_map->publish(*g_publish_map);
+  g_external_map->publish(*g_publish_map);
   
   /// Inform
   ROS_INFO("Processed a new local map. Size: %d bytes. Compressed size: %d bytes. Ratio: %f", 
            map_length, compressed_bytes, (float)map_length/(float)compressed_bytes);
   ROS_INFO("Processing local map took %fs.", (ros::Time::now() - init).toSec());
+}
+
+void processOdom(const nav_msgs::Odometry::ConstPtr& odom)
+{
 }
 
 int main(int argc, char **argv)
@@ -279,8 +296,8 @@ int main(int argc, char **argv)
   boost::function<void (char *)> new_robot_callback;
   new_robot_callback = newRobotInNetwork;
   g_my_comm = new wifi_comm::WiFiComm(new_robot_callback);
-  external_map = new ros::Publisher;
-  *external_map = g_n->advertise<mrgs_data_interface::NetworkMap>("external_map", 10);
+  g_external_map = new ros::Publisher;
+  *g_external_map = g_n->advertise<mrgs_data_interface::NetworkMap>("external_map", 10);
   g_foreign_map_vector_publisher = g_n->advertise<mrgs_data_interface::ForeignMapVector>("foreign_maps", 10);
   g_latest_pose = g_n->advertise<mrgs_data_interface::LatestRobotPose>("remote_nav/remote_poses", 10);
   
@@ -312,24 +329,9 @@ int main(int argc, char **argv)
   
   // Declare callbacks
   ros::Subscriber map = g_n->subscribe<nav_msgs::OccupancyGrid>("map", 1, processMap);
+  ros::Subscriber odom = g_n->subscribe<nav_msgs::Odometry>("odom", 1, processOdom);
   
-  // Regular execution: loop with spinOnce
-  /*ros::Rate r(1);
-  while(ros::ok())
-  {
-    // Publish external map
-    if(g_publish_map->compressed_data.size() == 0) // Only publish if the local, compressed, map exists.
-      ROS_DEBUG("No map to publish yet.");
-    else
-    {
-      ROS_DEBUG("Publishing map...");
-      external_map.publish(*g_publish_map);
-    }
-    
-    // Spin and sleep
-    ros::spinOnce();
-    r.sleep();
-  }*/
+  // Regular execution:
   ros::spin();
   
 

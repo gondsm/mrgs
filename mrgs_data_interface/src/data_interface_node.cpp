@@ -66,10 +66,8 @@
  * -> ForeignMap: A map received from another robot.
  * -> ForeignMapVector: A vector with a foreign map for each robot we know.
  * -> NetworkMap: The datatype that flows across the network. Contains a compressed map that is decompressed into a 
- * foreign map.
+ * foreign map, as well as a map to base_link transform.
  * -> LatestRobotPose: A Pose including the robot's ID, for transmission into the internal network.
- * -> NetworkPose: The datatype that carries poses on the network. It is simply a pose with the sending robot's MAC
- * address attached.
  */
 
 /// ROS includes
@@ -266,8 +264,20 @@ void processMap(const nav_msgs::OccupancyGrid::ConstPtr& map)
   g_publish_map->compressed_data.reserve(compressed_bytes);
   for(int i = 0; i < compressed_bytes; i++)
     g_publish_map->compressed_data.push_back(compressed[i]);
+  // Add transform to NetworkMap
+  tf::TransformListener listener;
+  bool will_publish = true;
+  if(listener.canTransform ("/base_link", "/map", ros::Time::now()))
+  {
+  }
+  else
+  {
+    ROS_WARN("Can't find map->base_link TF, won't publish network map.");
+    will_publish = false;
+  }
   // Publish
-  g_external_map->publish(*g_publish_map);
+  if(will_publish)
+    g_external_map->publish(*g_publish_map);
   
   /// Inform
   ROS_INFO("Processed a new local map. Size: %d bytes. Compressed size: %d bytes. Ratio: %f", 

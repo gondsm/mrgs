@@ -188,7 +188,7 @@ void processForeignMap(std::string ip, const mrgs_data_interface::NetworkMap::Co
   else
     ROS_DEBUG("This is a debug or repeated map. No decompression took place.");
   
-  /// Publish foreign maps
+  /// Publish foreign maps and transform
   // We only publish if the local map exists, so we don't send an empty map to the complete map node.
   if(g_publish_map->compressed_data.size() != 0)
   {
@@ -197,6 +197,10 @@ void processForeignMap(std::string ip, const mrgs_data_interface::NetworkMap::Co
     map_vector.map_vector = g_foreign_map_vector; // This is a potential time sink, depending on how the copy is handled.
     g_foreign_map_vector_publisher.publish(map_vector);
   }
+  mrgs_data_interface::LatestRobotPose latest_pose;
+  latest_pose.transform = msg->map_to_base_link;
+  latest_pose.id = id;
+  g_latest_pose.publish(latest_pose);
   
   /// Inform
   ROS_INFO("Processing foreign map took %fs.", (ros::Time::now() - init).toSec());

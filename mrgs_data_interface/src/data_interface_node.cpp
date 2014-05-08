@@ -134,6 +134,7 @@ inline int getRobotID(std:: string mac){
 
 void processForeignMap(std::string ip, const mrgs_data_interface::NetworkMap::ConstPtr& msg)
 {
+  // Missing: process the received transform
   // Start counting time
   ros::Time init = ros::Time::now();
   

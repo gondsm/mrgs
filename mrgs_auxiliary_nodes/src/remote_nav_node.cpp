@@ -78,6 +78,7 @@ void processTF(const mrgs_complete_map::LatestMapTF::ConstPtr& remote_transform)
     g_map_transform_vector.at(remote_transform->id) = new tf::StampedTransform;
   }
   tf::transformStampedMsgToTF(remote_transform->transform, *g_map_transform_vector.at(remote_transform->id));
+  // Missing: prepend robotN to the frames.
 }
 
 void processPose(const mrgs_data_interface::LatestRobotPose::ConstPtr& remote_pose)
@@ -89,6 +90,7 @@ void processPose(const mrgs_data_interface::LatestRobotPose::ConstPtr& remote_po
     g_base_transform_vector.at(remote_pose->id) = new tf::StampedTransform;
   }
   tf::transformStampedMsgToTF(remote_pose->transform, *g_base_transform_vector.at(remote_pose->id));
+  // Missing: prepend robotN to the frames.
 }
 
 
@@ -99,6 +101,7 @@ int main(int argc, char **argv)
   ros::init(argc, argv, "remote_nav_node");
   ros::Subscriber sub1 = n.subscribe("remote_nav/remote_poses", 10, processPose);
   ros::Subscriber sub2 = n.subscribe("remote_nav/remote_tf", 10, processTF);
+  tf::TransformBroadcaster broadcaster;
   
   // ROS loop
   //ros::spin();
@@ -113,6 +116,7 @@ int main(int argc, char **argv)
     {
       if(g_map_transform_vector.at(i) != NULL)
       {
+        broadcaster.sendTransform(*g_map_transform_vector.at(i));
       }
     }
     
@@ -120,6 +124,7 @@ int main(int argc, char **argv)
     {
       if(g_base_transform_vector.at(i) != NULL)
       {
+        broadcaster.sendTransform(*g_base_transform_vector.at(i));
       }
     }
     

@@ -281,34 +281,6 @@ void processMap(const nav_msgs::OccupancyGrid::ConstPtr& map)
   ROS_INFO("Processing local map took %fs.", (ros::Time::now() - init).toSec());
 }
 
-void processOdom(const nav_msgs::Odometry::ConstPtr& odom)
-{
-  // Check how long ago we've published a pose into the network. If sufficient time has passed, we publish a new one.
-  // We'll use 5 seconds as a base time between pose transmission.
-  if(ros::Time::now() - g_since_last_pose > ros::Duration(5.0))
-  {
-    // Check if transform exists. If not, we return
-    tf::TransformListener tf_listener;
-    if(!tf_listener.canTransform("/odom", "/map", ros::Time::now()))
-    {
-      ROS_INFO("Could not obtain transform, won't publish new pose.");
-      return;
-    }
-    
-    // Write data to new message
-    mrgs_data_interface::NetworkPose new_pose;
-    new_pose.mac = g_peer_macs.at(0);
-    new_pose.pose = odom->pose.pose;
-    tf::StampedTransform new_tf;
-    tf_listener.lookupTransform("/odom", "/map", ros::Time::now(), new_tf);
-    tf::transformStampedTFToMsg(new_tf, new_pose.transform);
-    
-    // Publish
-    ROS_INFO("Publishing new pose into network.");
-    g_external_pose.publish(new_pose);
-  }
-}
-
 int main(int argc, char **argv)
 {
   // Argument parsing
@@ -362,7 +334,6 @@ int main(int argc, char **argv)
   
   // Declare callbacks
   ros::Subscriber map = g_n->subscribe<nav_msgs::OccupancyGrid>("map", 1, processMap);
-  ros::Subscriber odom = g_n->subscribe<nav_msgs::Odometry>("odom", 1, processOdom);
   
   // Regular execution:
   ros::spin();

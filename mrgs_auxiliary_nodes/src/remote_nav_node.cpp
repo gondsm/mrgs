@@ -65,12 +65,8 @@
 ros::NodeHandle n;
 // Holds all current complete_map to map transforms
 std::vector<tf::StampedTransform*> g_map_transform_vector;
-// Holds all current map to odom transforms
-std::vector<tf::StampedTransform*> g_odom_transform_vector;
-// Holds all current odoms
-std::vector<geometry_msgs::Pose*> g_pose_vector;
-// Holds publishers for the odom topics
-std::vector<ros::Publisher*> g_odom_publisher_vector;
+// Holds all current map to base_link transforms
+std::vector<tf::StampedTransform*> g_base_transform_vector;
 
 void processTF(const mrgs_complete_map::LatestMapTF::ConstPtr& remote_transform)
 {
@@ -86,32 +82,13 @@ void processTF(const mrgs_complete_map::LatestMapTF::ConstPtr& remote_transform)
 
 void processPose(const mrgs_data_interface::LatestRobotPose::ConstPtr& remote_pose)
 {
-  // Determine if this is a pose we already have
-  if(g_pose_vector.size()-1 < remote_pose->id || g_pose_vector.at(remote_pose->id) == NULL)
+  if(g_base_transform_vector.size()-1 < remote_pose->id || g_base_transform_vector.at(remote_pose->id) == NULL)
   {
-    // If not, add it to the vector, and add its id to the id vector, and create a publisher
-    while(g_pose_vector.size()-1 < remote_pose->id)
-    {
-      g_pose_vector.push_back(NULL);
-      g_odom_publisher_vector.push_back(NULL);
-    }
-    g_pose_vector.at(remote_pose->id) = new geometry_msgs::Pose;
-    g_odom_publisher_vector.at(remote_pose->id) = new ros::Publisher;
-    char temp_topic[15];
-    sprintf(temp_topic, "robot_%d/pose", remote_pose->id);
-    *g_odom_publisher_vector.at(remote_pose->id) = n.advertise<geometry_msgs::PoseStamped>(temp_topic, 3);
+    while(g_base_transform_vector.size()-1 < remote_pose->id)
+      g_base_transform_vector.push_back(NULL);
+    g_base_transform_vector.at(remote_pose->id) = new tf::StampedTransform;
   }
-  *g_pose_vector.at(remote_pose->id) = remote_pose->pose;
-  
-  // Do the same for TF (kept separate lest some impossible case occur and we
-  // receive a pose without a TF. Technically, these are independent).
-  if(g_odom_transform_vector.size()-1 < remote_pose->id || g_odom_transform_vector.at(remote_pose->id) == NULL)
-  {
-    while(g_odom_transform_vector.size()-1 < remote_pose->id)
-      g_odom_transform_vector.push_back(NULL);
-    g_odom_transform_vector.at(remote_pose->id) = new tf::StampedTransform;
-  }
-  tf::transformStampedMsgToTF(remote_pose->transform, *g_odom_transform_vector.at(remote_pose->id));
+  tf::transformStampedMsgToTF(remote_pose->transform, *g_base_transform_vector.at(remote_pose->id));
 }
 
 
@@ -130,8 +107,8 @@ int main(int argc, char **argv)
   {
     // Broadcast all current data:
     //    Iterate through the various vectors, publishing data in the correct
-    //    topics and TF frames. Don't forget to correctly build the header for
-    //    the StampedPoses.
+    //    TF frames. Don't forget to correctly build the header for the stamped
+    //    StampedPoses.
     for(int i = 0; i < g_map_transform_vector.size(); i++)
     {
       if(g_map_transform_vector.at(i) != NULL)
@@ -139,16 +116,9 @@ int main(int argc, char **argv)
       }
     }
     
-    for(int i = 0; i < g_odom_transform_vector.size(); i++)
+    for(int i = 0; i < g_base_transform_vector.size(); i++)
     {
-      if(g_odom_transform_vector.at(i) != NULL)
-      {
-      }
-    }
-    
-    for(int i = 0; i < g_pose_vector.size(); i++)
-    {
-      if(g_pose_vector.at(i) != NULL)
+      if(g_base_transform_vector.at(i) != NULL)
       {
       }
     }

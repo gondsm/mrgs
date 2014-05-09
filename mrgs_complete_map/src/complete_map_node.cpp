@@ -68,6 +68,13 @@ ros::ServiceClient g_client;
 ros::Publisher pub1;
 ros::Publisher pub2;
 
+geometry_msgs::Quaternion multiplyQuaternion(geometry_msgs::Quaternion q1, geometry_msgs::Quaternion q2)
+{
+  geometry_msgs::Quaternion q3;
+  
+  return q3;
+}
+
 void processForeignMaps(const mrgs_data_interface::ForeignMapVector::ConstPtr& maps)
 {
   /// Inform and start counting time
@@ -220,11 +227,42 @@ void processForeignMaps(const mrgs_data_interface::ForeignMapVector::ConstPtr& m
   }
   
   /// Recaltulate and publish all our complete_map to map transformations
+  // Iterate through every map and calculate its transform
+  for(int i = 0; i < g_latest_map_times.size(); i++)
+  {
+    // Calculate transform
+    geometry_msgs::TransformStamped temp_transform;
+    char buffer[10];
+    sprintf(buffer, "%d", i);
+    temp_transform.header.frame_id = std::string(std::string("robot_") + std::string(buffer) + std::string("/map"));
+    temp_transform.child_frame_id = "complete_map";
+    temp_transform.header.stamp = ros::Time::now();
+    temp_transform.transform.translation.x = g_transforms.at(0).at(i).transform.translation.x;
+    temp_transform.transform.translation.y = g_transforms.at(0).at(i).transform.translation.y;
+    temp_transform.transform.translation.z = g_transforms.at(0).at(i).transform.translation.z;
+    temp_transform.transform.rotation.x = g_transforms.at(0).at(i).transform.rotation.x;
+    temp_transform.transform.rotation.y = g_transforms.at(0).at(i).transform.rotation.y;
+    temp_transform.transform.rotation.z = g_transforms.at(0).at(i).transform.rotation.z;
+    temp_transform.transform.rotation.w = g_transforms.at(0).at(i).transform.rotation.w;
+    for(int j = 1; j < g_transforms.size(); j++)
+    {
+      temp_transform.transform.translation.x += g_transforms.at(j).at(i/pow(2, j)).transform.translation.x;
+      temp_transform.transform.translation.y += g_transforms.at(j).at(i/pow(2, j)).transform.translation.y;
+      temp_transform.transform.translation.z += g_transforms.at(j).at(i/pow(2, j)).transform.translation.z;
+      temp_transform.transform.rotation = multiplyQuaternion(temp_transform.transform.rotation ,g_transforms.at(j).at(i/pow(2, j)).transform.rotation);
+    }
+    
+    // Publish it
+    mrgs_complete_map::LatestMapTF temp_latest;
+    temp_latest.id = i;
+    temp_latest.transform = temp_transform;
+    pub2.publish(temp_latest);
+  }
   
   /// Publish our new, shiny, complete map and report performance
   // Use a latched topic, so that the last map is accessible to new subscribers.
   ROS_DEBUG("Publishing new complete map.");
-  //g_aligned_maps.at(g_aligned_maps.size()-1).at(0).header.frame_id = "map";
+  g_aligned_maps.at(g_aligned_maps.size()-1).at(0).header.frame_id = "complete_map";
   pub1.publish(g_aligned_maps.at(g_aligned_maps.size()-1).at(0));
   ROS_INFO("Map processing took %fs.", (ros::Time::now() - init).toSec());
 }

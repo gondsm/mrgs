@@ -3,6 +3,7 @@ nav_msgs/OccupancyGrid map2
 bool crop   # Should the output be cropped to show only the region of interest?
 ---
 nav_msgs/OccupancyGrid merged_map              # The result of the fusion process
-geometry_msgs/TransformStamped transform       # Standard ROS transformation
+geometry_msgs/TransformStamped transform1      # Standard ROS transformation from map1 to the merged map
+geometry_msgs/TransformStamped transform2      # " from map2 to the merged map
 float32 success_coefficient                    # An estimate of how well the alignment went. 
                                                # This should lie between 0 and 1. A value of -1 indicates an error.

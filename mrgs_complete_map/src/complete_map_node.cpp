@@ -61,6 +61,7 @@ std::vector<ros::Time> g_latest_map_times;
 std::vector<std::vector<bool> > g_is_dirty;
 // To be edited by the processForeignMaps callback
 std::vector<std::vector<nav_msgs::OccupancyGrid> > g_aligned_maps;
+std::vector<std::vector<geometry_msgs::TransformStamped> > g_transforms;
 // To allow calls to service from callbacks
 ros::ServiceClient g_client;
 // To allow publishing from callbacks
@@ -78,7 +79,7 @@ void processForeignMaps(const mrgs_data_interface::ForeignMapVector::ConstPtr& m
   ROS_DEBUG("Allocating dirtiness matrix...");
   // Allocate first row
   g_is_dirty.push_back(std::vector<bool>(maps->map_vector.size(), true));
-  // Allocate subsequent rows:
+  // Allocate subsequent rows. We do this row by row until the las row only has one element.
   ROS_DEBUG("First row allocated with %d elements. Allocating others...", maps->map_vector.size());
   int i = 0;
   do
@@ -97,6 +98,7 @@ void processForeignMaps(const mrgs_data_interface::ForeignMapVector::ConstPtr& m
   ROS_DEBUG("Allocating map matrix.");
   std::vector<nav_msgs::OccupancyGrid> empty_vec;
   nav_msgs::OccupancyGrid empty_map;
+  geometry_msgs::TransformStamped empty_transform;
   while(g_aligned_maps.size() < g_is_dirty.size()-1)
   {
     g_aligned_maps.push_back(empty_vec);
@@ -107,6 +109,7 @@ void processForeignMaps(const mrgs_data_interface::ForeignMapVector::ConstPtr& m
     {
       ROS_DEBUG("Pushing empty map into line %d of the aligned maps vector.", i);
       g_aligned_maps.at(i).push_back(empty_map);
+      g_transforms.at(i).push_back(empty_transform);
     }
   }
   
@@ -114,7 +117,7 @@ void processForeignMaps(const mrgs_data_interface::ForeignMapVector::ConstPtr& m
   ROS_DEBUG("Marking updates.");
   if(g_latest_map_times.size()==0)
   {
-    // There is no previous data, we're on the first run
+    // There is no previous data, we're on the first run: we fill in the vector with the times we've received.
     ROS_DEBUG("First run, all maps are dirty");
     for(int i = 0; i < maps->map_vector.size(); i++)
     {
@@ -123,6 +126,9 @@ void processForeignMaps(const mrgs_data_interface::ForeignMapVector::ConstPtr& m
   }
   else
   {
+    // If this isn't the first run, we check the maps we already have and mark them dirty as needed. If the vector we
+    // received is bigged than the last, all those new maps are marked as dirty, in order to trigger the building of
+    // their side of the tree.
     for(int i = 0; i < g_is_dirty.at(0).size(); i++)
     {
       if(i >= g_latest_map_times.size() || g_latest_map_times.at(i) < maps->map_vector.at(i).map.header.stamp)
@@ -199,6 +205,8 @@ void processForeignMaps(const mrgs_data_interface::ForeignMapVector::ConstPtr& m
           {
             ROS_DEBUG("Got a response! Adding map to our matrix.");
             g_aligned_maps.at(i-1).at(j) = srv.response.merged_map;
+            g_transforms.at(i-1).at(2*j) = srv.response.transform1;
+            g_transforms.at(i-1).at((2*j)+1) = srv.response.transform2;
             ROS_WARN("Received index: %f", srv.response.success_coefficient);
           }
         }
@@ -210,6 +218,8 @@ void processForeignMaps(const mrgs_data_interface::ForeignMapVector::ConstPtr& m
       }
     }
   }
+  
+  /// Recaltulate and publish all our complete_map to map transformations
   
   /// Publish our new, shiny, complete map and report performance
   // Use a latched topic, so that the last map is accessible to new subscribers.

@@ -145,7 +145,6 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
   
   // Transfer grid info into datatypes mapmerge can interpret
   // We'll assume values are either -1 for unknown, 100 for occupied and 0 for free.
-  // This has to change: we're losing too much information!
   // Different values will be classified as unknown.
   mapmerge::grid_map temp_a(map_final_r, map_final_c),temp_b(map_final_r, map_final_c);
   bool exists_occupied1 = false, exists_occupied2 = false;
@@ -326,6 +325,7 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
     res.merged_map.header.frame_id = "map";
     res.merged_map.info.width = map_final_c;
     res.merged_map.info.height = map_final_r;
+    res.merged_map.info.map_load_time = ros::Time::now();
     k = 0;
     for(int i = 0; i < c.get_rows(); i++)
     {
@@ -354,7 +354,27 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
     }
   }
   res.success_coefficient = hyp[0].ai;
-  // Missing: pack transform into response.
+  
+  /// Pack transforms into response.
+  // From map1 to merged_map
+  res.transform1.transform.rotation.x = 0;
+  res.transform1.transform.rotation.y = 0;
+  res.transform1.transform.rotation.z = 0;
+  res.transform1.transform.rotation.w = 1;
+  res.transform1.transform.translation.x = padding_cols * res.merged_map.info.resolution;
+  res.transform1.transform.translation.y = padding_rows * res.merged_map.info.resolution;
+  res.transform1.transform.translation.z = 0;
+  // From map2 to merged_map
+  float deg_to_rad = 0.01745329251; // = pi/180, precalculated for performance.
+  float theta = deg_to_rad * -1 * hyp[0].rotation;
+  float sin_theta = sin(theta/2);
+  float cos_theta = cos(theta/2);
+  float quaternion_magnitude = sqrtf(pow(sin_theta, 2) + pow(cos_theta,2));
+  res.transform2.transform.rotation.x = 0;
+  res.transform2.transform.rotation.y = 0;
+  res.transform2.transform.rotation.z = cos_theta/quaternion_magnitude;
+  res.transform2.transform.rotation.w = sin_theta/quaternion_magnitude;
+  
   
   // Final report
   ROS_INFO("Results sent. Total service time was %fs.", (ros::Time::now()-init).toSec());

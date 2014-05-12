@@ -9,6 +9,9 @@
 # Install libsuitesparse, bison (for olsrd), flex (idem), from Ubuntu repositories
 sudo apt-get install libsuitesparse-dev bison flex
 
+# Pull LZ4
+svn checkout http://lz4.googlecode.com/svn/trunk/ ../../mrgs_data_interface/src/lz4
+
 # Pull and unpack olsrd
 wget http://www.olsr.org/releases/0.6/olsrd-0.6.6.1.tar.bz2
 tar xf olsrd-0.6.6.1.tar.bz2

@@ -175,7 +175,7 @@ void processForeignMap(std::string ip, const mrgs_data_interface::NetworkMap::Co
     // Decompress
     int decompressed_bytes = LZ4_decompress_safe(compressed, decompressed, msg->compressed_data.size(), msg->decompressed_length);
     
-    /// Copy data to foreign map vector
+    // Copy data to foreign map vector
     // Copy metadata
     g_foreign_map_vector.at(id).map.header.stamp = msg->grid_stamp;
     g_foreign_map_vector.at(id).map.info = msg->info;
@@ -205,19 +205,6 @@ void processForeignMap(std::string ip, const mrgs_data_interface::NetworkMap::Co
   /// Inform
   ROS_INFO("Processing foreign map took %fs.", (ros::Time::now() - init).toSec());
 }
-
-/*void processNetworkPose(std::string ip, const mrgs_data_interface::NetworkPose::ConstPtr& new_pose)
-{
-  // Publish received pose in a LatestRobotPose message
-  ROS_INFO("Received a new pose from the network.");
-  int local_id = getRobotID(new_pose->mac);
-  if(local_id == -1) return;  // We've never met this robot, we drop the message.
-  mrgs_data_interface::LatestRobotPose latest_pose;
-  latest_pose.transform = new_pose->transform;
-  latest_pose.pose = new_pose->pose;
-  latest_pose.id = local_id;
-  g_latest_pose.publish(latest_pose);
-}*/
 
 void newRobotInNetwork(char * ip)
 {

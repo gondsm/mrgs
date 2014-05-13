@@ -220,20 +220,11 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
   mapmerge::translate_map(a, temp_a, -padding_rows, -padding_cols);
   mapmerge::translate_map(b, temp_b, -padding_rows, -padding_cols);
 
-
-  // Report performance
-  ros::Time conv = ros::Time::now();
-  ROS_DEBUG("Map conversion (and padding) took %fs.", (conv-init).toSec());
-
   /// Second step: calculate and apply transformation
   // Get results (we only want one hypothesis, but we have to calculate several, or the results become invalid)
   int n_hypothesis = 4;
   std::vector<mapmerge::transformation> hyp = mapmerge::get_hypothesis(a,b,n_hypothesis,1,false);
   ROS_DEBUG("Result: %f %d %d %d", hyp[0].ai, hyp[0].deltax, hyp[0].deltay, hyp[0].rotation);
-  
-  // Report performance
-  ros::Duration res_dur = ros::Time::now() - conv;
-  ROS_DEBUG("Calculating results took %fs.", res_dur.toSec());
   
   // Rototranslate map (missing: determine if translation will lose info and act accordingly)
   mapmerge::grid_map c, d;

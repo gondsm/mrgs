@@ -106,7 +106,7 @@ void processForeignMaps(const mrgs_data_interface::ForeignMapVector::ConstPtr& m
   
   /// Expand aligned map matrix (if needed)
   // This methodology is a bit wasteful, but will rarely be used, so it's passable.
-  ROS_DEBUG("Allocating map matrix.");
+  ROS_DEBUG("Allocating map and transform matrix.");
   std::vector<nav_msgs::OccupancyGrid> empty_vec;
   nav_msgs::OccupancyGrid empty_map;
   geometry_msgs::TransformStamped empty_transform;
@@ -118,7 +118,7 @@ void processForeignMaps(const mrgs_data_interface::ForeignMapVector::ConstPtr& m
   {
     while(g_aligned_maps.at(i).size() < g_is_dirty.at(i+1).size())
     {
-      ROS_DEBUG("Pushing empty map into line %d of the aligned maps vector.", i);
+      ROS_DEBUG("Pushing empty map and transform into line %d of their vectors.", i);
       g_aligned_maps.at(i).push_back(empty_map);
       g_transforms.at(i).push_back(empty_transform);
     }
@@ -214,11 +214,10 @@ void processForeignMaps(const mrgs_data_interface::ForeignMapVector::ConstPtr& m
             ROS_FATAL("Error calling service!");
           else
           {
-            ROS_DEBUG("Got a response! Adding map to our matrix.");
+            ROS_DEBUG("Got a response! Adding map to our matrix. Index = %f.", srv.response.success_coefficient);
             g_aligned_maps.at(i-1).at(j) = srv.response.merged_map;
             g_transforms.at(i-1).at(2*j) = srv.response.transform1;
             g_transforms.at(i-1).at((2*j)+1) = srv.response.transform2;
-            ROS_WARN("Received index: %f", srv.response.success_coefficient);
           }
         }
         else
@@ -232,9 +231,11 @@ void processForeignMaps(const mrgs_data_interface::ForeignMapVector::ConstPtr& m
   
   /// Recaltulate and publish all our complete_map to map transformations
   // Iterate through every map and calculate its transform
+  ROS_DEBUG("Calculating transforms.");
   for(int i = 0; i < g_latest_map_times.size(); i++)
   {
     // Calculate transform
+    ROS_DEBUG("Calculating transform for robot %d.", i);
     geometry_msgs::TransformStamped temp_transform;
     char buffer[10];
     sprintf(buffer, "%d", i);
@@ -257,6 +258,7 @@ void processForeignMaps(const mrgs_data_interface::ForeignMapVector::ConstPtr& m
     }
     
     // Publish it
+    ROS_DEBUG("Publishing transform for robot %d.", i);
     mrgs_complete_map::LatestMapTF temp_latest;
     temp_latest.id = i;
     temp_latest.transform = temp_transform;
@@ -268,7 +270,7 @@ void processForeignMaps(const mrgs_data_interface::ForeignMapVector::ConstPtr& m
   ROS_DEBUG("Publishing new complete map.");
   g_aligned_maps.at(g_aligned_maps.size()-1).at(0).header.frame_id = "complete_map";
   pub1.publish(g_aligned_maps.at(g_aligned_maps.size()-1).at(0));
-  ROS_INFO("Map processing took %fs.", (ros::Time::now() - init).toSec());
+  ROS_INFO("Map vector processing took %fs.", (ros::Time::now() - init).toSec());
 }
 
 int main(int argc, char **argv)

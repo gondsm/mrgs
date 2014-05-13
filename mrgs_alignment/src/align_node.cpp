@@ -144,11 +144,11 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
   if(padding_cols < 0) padding_cols = 0;
   map_final_r += 2*padding_rows;
   map_final_c += 2*padding_cols;
-  ROS_DEBUG("Final dimensions: rows:%d, cols:%d.", map_final_r, map_final_c);
   
   // Transfer grid info into datatypes mapmerge can interpret
   // We'll assume values are either -1 for unknown, 100 for occupied and 0 for free.
   // Different values will be classified as unknown.
+  ROS_DEBUG("Final dimensions: rows=%d, cols=%d. Copying into mapmerge data.", map_final_r, map_final_c);
   mapmerge::grid_map temp_a(map_final_r, map_final_c),temp_b(map_final_r, map_final_c);
   bool exists_occupied1 = false, exists_occupied2 = false;
   int k = 0, k1 = 0, k2 = 0;  // Linear counters
@@ -223,10 +223,12 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
   /// Second step: calculate and apply transformation
   // Get results (we only want one hypothesis, but we have to calculate several, or the results become invalid)
   int n_hypothesis = 4;
+  ROS_DEBUG("Calculating hypotheses.");
   std::vector<mapmerge::transformation> hyp = mapmerge::get_hypothesis(a,b,n_hypothesis,1,false);
-  ROS_DEBUG("Result: %f %d %d %d", hyp[0].ai, hyp[0].deltax, hyp[0].deltay, hyp[0].rotation);
+  //ROS_DEBUG("Best result: %f %d %d %d", hyp[0].ai, hyp[0].deltax, hyp[0].deltay, hyp[0].rotation);
   
   // Rototranslate map (missing: determine if translation will lose info and act accordingly)
+  ROS_DEBUG("Applying transformation and merging.");
   mapmerge::grid_map c, d;
   float rotx, roty;
   mapmerge::rotate_map(c, b, hyp[0].rotation, 127, rotx, roty);
@@ -281,6 +283,7 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
   //mapmerge::save_map_to_file(c, "/home/vsantos/lol/out.png");
   
   // Pack results into response message
+  ROS_DEBUG("Packing results into response.");
   if(req.crop == false)
   {
     res.merged_map.data.resize(map_final_r*map_final_c);
@@ -352,6 +355,7 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
   res.success_coefficient = hyp[0].ai;
   
   /// Final step: calculate and pack transforms into response.
+  ROS_DEBUG("Calculating and packing transforms.");
   // From map1 to merged_map
   res.transform1.transform.rotation.x = 0;
   res.transform1.transform.rotation.y = 0;

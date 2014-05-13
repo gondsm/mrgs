@@ -62,7 +62,6 @@ bool g_first_map = true;
 
 void processUnfilteredMap(const nav_msgs::OccupancyGrid::ConstPtr& unfiltered_map)
 {
-  // Determine if the last map is the 
   g_last_map = *unfiltered_map;
   g_map_publisher.publish(unfiltered_map);
 }

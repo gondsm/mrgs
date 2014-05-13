@@ -309,8 +309,8 @@ int main(int argc, char **argv)
   g_my_comm = new wifi_comm::WiFiComm(new_robot_callback);
   g_external_map = new ros::Publisher;
   *g_external_map = g_n->advertise<mrgs_data_interface::NetworkMap>("external_map", 10);
-  g_foreign_map_vector_publisher = g_n->advertise<mrgs_data_interface::ForeignMapVector>("foreign_maps", 10);
-  g_latest_pose = g_n->advertise<mrgs_data_interface::LatestRobotPose>("remote_nav/remote_poses", 10);
+  g_foreign_map_vector_publisher = g_n->advertise<mrgs_data_interface::ForeignMapVector>("mrgs/foreign_maps", 10);
+  g_latest_pose = g_n->advertise<mrgs_data_interface::LatestRobotPose>("mrgs/remote_poses", 10);
   g_since_last_pose = ros::Time::now();
   
   // Retrieve local MAC address
@@ -340,7 +340,7 @@ int main(int argc, char **argv)
   g_foreign_map_vector.push_back(emptyMap);
   
   // Declare callbacks
-  ros::Subscriber map = g_n->subscribe<nav_msgs::OccupancyGrid>("map", 1, processMap);
+  ros::Subscriber map = g_n->subscribe<nav_msgs::OccupancyGrid>("mrgs/local_map", 1, processMap);
   
   // Regular execution:
   ros::spin();

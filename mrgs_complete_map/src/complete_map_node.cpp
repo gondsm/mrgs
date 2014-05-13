@@ -278,9 +278,9 @@ int main(int argc, char **argv)
   ros::NodeHandle n;
   g_client = n.serviceClient<mrgs_alignment::align>("align");
   mrgs_alignment::align srv;
-  ros::Subscriber sub2 = n.subscribe("foreign_maps", 1, processForeignMaps);
+  ros::Subscriber sub2 = n.subscribe("mrgs/foreign_maps", 1, processForeignMaps);
   pub1 = n.advertise<nav_msgs::OccupancyGrid>("complete_map", 10);
-  pub2 = n.advertise<mrgs_complete_map::LatestMapTF>("remote_nav/remote_tf", 10);
+  pub2 = n.advertise<mrgs_complete_map::LatestMapTF>("mrgs/remote_tf", 10);
   
   // ROS loop
   ros::spin();

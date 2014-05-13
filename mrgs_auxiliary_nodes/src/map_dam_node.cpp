@@ -52,10 +52,11 @@
 #include <cstdlib>
 
 // Global variables
-
+ros::Publisher g_map_publisher;
 
 void processUnfilteredMap(const nav_msgs::OccupancyGrid::ConstPtr& unfiltered_map)
 {
+  g_map_publisher.publish(unfiltered_map);
 }
 
 int main(int argc, char **argv)
@@ -63,8 +64,8 @@ int main(int argc, char **argv)
   // ROS initialization
   ros::init(argc, argv, "remote_map_node");
   ros::NodeHandle n;
-  ros::Subscriber sub1 = n.subscribe("map", 10, processUnfilteredMap);
-  
+  ros::Subscriber sub1 = n.subscribe("map", 2, processUnfilteredMap);
+  g_map_publisher = n.advertise<nav_msgs::OccupancyGrid>("mrgs/local_map", 2);
   // ROS loop
   ros::spin();
 

@@ -61,8 +61,6 @@
 #include <cstdlib>
 
 // Global variables
-// Node Handle
-
 // Holds all current complete_map to map transforms
 std::vector<tf::StampedTransform*> g_map_transform_vector;
 // Holds all current map to base_link transforms
@@ -100,8 +98,8 @@ int main(int argc, char **argv)
   // ROS initialization
   ros::init(argc, argv, "remote_nav_node");
   ros::NodeHandle n;
-  ros::Subscriber sub1 = n.subscribe("remote_nav/remote_poses", 10, processPose);
-  ros::Subscriber sub2 = n.subscribe("remote_nav/remote_tf", 10, processTF);
+  ros::Subscriber sub1 = n.subscribe("mrgs/remote_poses", 10, processPose);
+  ros::Subscriber sub2 = n.subscribe("mrgs/remote_tf", 10, processTF);
   tf::TransformBroadcaster broadcaster;
   
   // ROS loop

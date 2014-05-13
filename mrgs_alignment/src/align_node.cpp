@@ -407,7 +407,6 @@ int main(int argc, char **argv)
   ros::init(argc, argv, "align_node");
   ros::NodeHandle n;
   ros::ServiceServer service = n.advertiseService("align", align);
-  ROS_DEBUG("Ready to align!");
   ros::spin();
 
   return 0;

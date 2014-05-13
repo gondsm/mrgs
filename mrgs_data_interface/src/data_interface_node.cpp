@@ -237,8 +237,6 @@ void processMap(const nav_msgs::OccupancyGrid::ConstPtr& map)
   /// Create the new NetworkMap
   // Fill in local mac
   g_publish_map->mac = g_peer_macs.at(0);
-  // Indicate that it's a complete map
-  g_publish_map->is_complete = true;
   // Fill in time stamp, metadata and decompressed length
   g_publish_map->grid_stamp = map->header.stamp;
   g_publish_map->info = map->info;
@@ -260,6 +258,9 @@ void processMap(const nav_msgs::OccupancyGrid::ConstPtr& map)
   bool will_publish = true;
   if(listener.canTransform ("/base_link", "/map", ros::Time::now()))
   {
+    tf::StampedTransform map_to_base_link;
+    listener.lookupTransform(std::string("/map"), std::string("/base_link"), ros::Time::now(), map_to_base_link);
+    tf::transformStampedTFToMsg(map_to_base_link, g_publish_map->map_to_base_link);
   }
   else
   {

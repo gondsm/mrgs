@@ -43,7 +43,8 @@
  * to avoid overloading it if a SLAM technique decides to publish maps very frequently.
  * 
  * Methodology:
- * The node intercepts the /map topic and publishes a new topic, which the data interface subscribes to.
+ * The node intercepts the /map topic and publishes a new topic, which the data interface subscribes to. Since the data
+ * interface node is the entry point for maps in the system, this is enough to control the way maps enter the system.
  * 
  */
 // ROS includes
@@ -52,10 +53,17 @@
 #include <cstdlib>
 
 // Global variables
+// So we can publish from inside the callback
 ros::Publisher g_map_publisher;
+// Last map we've received
+nav_msgs::OccupancyGrid g_last_map;
+// Is this the first map we've ever received?
+bool g_first_map = true;
 
 void processUnfilteredMap(const nav_msgs::OccupancyGrid::ConstPtr& unfiltered_map)
 {
+  // Determine if the last map is the 
+  g_last_map = *unfiltered_map;
   g_map_publisher.publish(unfiltered_map);
 }
 

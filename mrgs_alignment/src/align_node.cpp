@@ -57,7 +57,7 @@
  *    5. (TODO) Determine if the to-be-translation will cause loss of data, and if so, accordingly pad the receiving map
  * in the necessary direction.
  *    6. Apply the suggested translation.
- *    7. Pack results into response message.
+ *    7. Pack results into response message, including transformations (which implies calculating them).
  */
 
 // ROS includes
@@ -91,6 +91,9 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
   ROS_DEBUG("Dimensions (h x w): %dx%d and %dx%d.", req.map1.info.height, req.map1.info.width,
                                                    req.map2.info.height, req.map2.info.width);
                                                    
+  /// First step: padding and copying into mapmerge datatypes
+  // Padding prevents us from losing parts of the map when rotating and translating the maps.
+  // We add padding by adding to the final dimension of the map before copying them into mapmerge datatypes.
   // Determine if we need to add any padding
   int map_final_r = 0, map_final_c = 0;
   if(req.map1.info.height == req.map2.info.height && req.map1.info.width == req.map2.info.width)
@@ -222,6 +225,7 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
   ros::Time conv = ros::Time::now();
   ROS_DEBUG("Map conversion (and padding) took %fs.", (conv-init).toSec());
 
+  /// Second step: calculate and apply transformation
   // Get results (we only want one hypothesis, but we have to calculate several, or the results become invalid)
   int n_hypothesis = 4;
   std::vector<mapmerge::transformation> hyp = mapmerge::get_hypothesis(a,b,n_hypothesis,1,false);
@@ -237,6 +241,7 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
   mapmerge::rotate_map(c, b, hyp[0].rotation, 127, rotx, roty);
   mapmerge::translate_map(d, c, hyp[0].deltax, hyp[0].deltay);
   
+  /// Third step: merge maps and pack into response
   // Merge map
   // d contains the aligned map, c can contain the merged map.
   // We assume a and d have equal dimensions (a and b should have been padded to avoid losses in rotation)
@@ -355,7 +360,7 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
   }
   res.success_coefficient = hyp[0].ai;
   
-  /// Pack transforms into response.
+  /// Final step: calculate and pack transforms into response.
   // From map1 to merged_map
   res.transform1.transform.rotation.x = 0;
   res.transform1.transform.rotation.y = 0;

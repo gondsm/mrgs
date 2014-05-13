@@ -214,7 +214,7 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
 
   // Translate grids to re-center:
   mapmerge::grid_map a,b;
-  mapmerge::translate_map(a, temp_a, -padding_rows, -padding_cols); // Why do we have to invert the translation input?
+  mapmerge::translate_map(a, temp_a, -padding_rows, -padding_cols);
   mapmerge::translate_map(b, temp_b, -padding_rows, -padding_cols);
 
 

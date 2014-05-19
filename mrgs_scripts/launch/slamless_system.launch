@@ -1,5 +1,5 @@
 <launch>
-  <arg name="working_interface" default="wlan0" />
+  <arg name="working_interface" default="eth0" />
   
   <!-- mrgs -->
   <!-- wifi_comm node -->

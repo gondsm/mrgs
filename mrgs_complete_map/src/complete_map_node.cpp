@@ -40,9 +40,13 @@
  * 
  * Summary:
  * 
+ * This node is responsible for processing a vector containing all the latest maps we've acquired from the local and
+ * remote robots.
+ * 
  * Methodology:
  *  1. Receive maps
- *  3. Send them two by two to be aligned
+ *  2. Build a tree-like structure for storing and updating merged maps
+ *  3. Send maps two by two to be aligned as needed
  *  4. Publish the complete map
  * 
  */
@@ -54,6 +58,7 @@
 #include <cstdlib>
 
 // Global variables
+// Program state:
 // To be edited only by the /foreign_maps callback
 std::vector<ros::Time> g_latest_map_times;
 // To be edited only by the processForeignMaps callback
@@ -62,11 +67,13 @@ std::vector<std::vector<bool> > g_is_dirty;
 // To be edited by the processForeignMaps callback
 std::vector<std::vector<nav_msgs::OccupancyGrid> > g_aligned_maps;
 std::vector<std::vector<geometry_msgs::TransformStamped> > g_transforms;
+
+// ROS facilities:
 // To allow calls to service from callbacks
 ros::ServiceClient g_client;
 // To allow publishing from callbacks
-ros::Publisher pub1;
-ros::Publisher pub2;
+ros::Publisher g_complete_map_pub;
+ros::Publisher g_remote_tf_pub;
 
 inline geometry_msgs::Quaternion multiplyQuaternion(geometry_msgs::Quaternion q1, geometry_msgs::Quaternion q2)
 {
@@ -262,14 +269,14 @@ void processForeignMaps(const mrgs_data_interface::ForeignMapVector::ConstPtr& m
     mrgs_complete_map::LatestMapTF temp_latest;
     temp_latest.id = i;
     temp_latest.transform = temp_transform;
-    pub2.publish(temp_latest);
+    g_remote_tf_pub.publish(temp_latest);
   }
   
   /// Publish our new, shiny, complete map and report performance
   // Use a latched topic, so that the last map is accessible to new subscribers.
   ROS_DEBUG("Publishing new complete map.");
   g_aligned_maps.at(g_aligned_maps.size()-1).at(0).header.frame_id = "complete_map";
-  pub1.publish(g_aligned_maps.at(g_aligned_maps.size()-1).at(0));
+  g_complete_map_pub.publish(g_aligned_maps.at(g_aligned_maps.size()-1).at(0));
   ROS_INFO("Map vector processing took %fs.", (ros::Time::now() - init).toSec());
 }
 
@@ -281,8 +288,8 @@ int main(int argc, char **argv)
   g_client = n.serviceClient<mrgs_alignment::align>("align");
   mrgs_alignment::align srv;
   ros::Subscriber sub2 = n.subscribe("mrgs/foreign_maps", 1, processForeignMaps);
-  pub1 = n.advertise<nav_msgs::OccupancyGrid>("complete_map", 10);
-  pub2 = n.advertise<mrgs_complete_map::LatestMapTF>("mrgs/remote_tf", 10);
+  g_complete_map_pub = n.advertise<nav_msgs::OccupancyGrid>("complete_map", 10);
+  g_remote_tf_pub = n.advertise<mrgs_complete_map::LatestMapTF>("mrgs/remote_tf", 10);
   
   // ROS loop
   ros::spin();

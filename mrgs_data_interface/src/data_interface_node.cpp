@@ -54,7 +54,6 @@
  * -> g_my_comm: WiFiComm object, responsible for facilitating communication.
  * -> g_n: ROS node handle, must be global to make subscription of topics in callbacks possible.
  * -> g_subs: Vector os subscriptions.
- * -> g_publish_map: An external map, for publishing in the network connecting multiple robots.
  * These variables are only written to on very very well determined moments, to prevent race conditions and other data-
  * -related issues.
  * I'm sure that with sufficient time, a few of these could be converted into local variables of some sort. However, in
@@ -94,6 +93,10 @@
 #include <fstream>
 
 /// Global variables
+// Node handle. Must be global to be accessible by callbacks.
+ros::NodeHandle *g_n;
+
+// Program state:
 // To be written only by the processForeignMap callback (and once in main() for initialization)
 // (at(0) is always our local mac)
 std::vector<std::string> g_peer_macs;
@@ -101,12 +104,12 @@ std::vector<std::string> g_peer_macs;
 std::vector<mrgs_data_interface::ForeignMap> g_foreign_map_vector;
 // wifi_comm object
 wifi_comm::WiFiComm* g_my_comm;
-// Node handle. Must be global to be accessible by callbacks.
-ros::NodeHandle *g_n;
-// Global list of subscribers (also required by wifi_comm)
+// Global list of wifi_comm subscribers
 std::vector<ros::Subscriber> g_subs;
-// To be written only by the processMap callback!
-mrgs_data_interface::NetworkMap::Ptr g_publish_map(new mrgs_data_interface::NetworkMap);
+// To indicate whether or not we have a map from the local robot
+bool g_local_map_exists = false;
+
+// Publishers:
 // To enable publishing from callback, to be edited once in main()
 ros::Publisher g_foreign_map_vector_publisher;
 // Publisher for external map (map that goes into the external network)
@@ -190,7 +193,7 @@ void processForeignMap(std::string ip, const mrgs_data_interface::NetworkMap::Co
   
   /// Publish foreign maps and transform
   // We only publish if the local map exists, so we don't send an empty map to the complete map node.
-  if(g_publish_map->compressed_data.size() != 0)
+  if(g_local_map_exists == true)
   {
     ROS_DEBUG("Publishing foreign_map_vector...");
     mrgs_data_interface::ForeignMapVector map_vector;
@@ -233,15 +236,17 @@ void processMap(const nav_msgs::OccupancyGrid::ConstPtr& map)
   
   /// Update the local map
   g_foreign_map_vector.at(0).map = *map;
+  g_local_map_exists = true;
   
   /// Create the new NetworkMap
+  mrgs_data_interface::NetworkMap::Ptr publish_map(new mrgs_data_interface::NetworkMap);
   // Fill in local mac
-  g_publish_map->mac = g_peer_macs.at(0);
+  publish_map->mac = g_peer_macs.at(0);
   // Fill in time stamp, metadata and decompressed length
-  g_publish_map->grid_stamp = map->header.stamp;
-  g_publish_map->info = map->info;
-  unsigned int map_length = g_publish_map-> info.height * g_publish_map-> info.width;
-  g_publish_map->decompressed_length = map_length;
+  publish_map->grid_stamp = map->header.stamp;
+  publish_map->info = map->info;
+  unsigned int map_length = publish_map-> info.height * publish_map-> info.width;
+  publish_map->decompressed_length = map_length;
   // Compress the new map
   char* compressed = new char [LZ4_compressBound(map_length)];              // We have to allocate this buffer with 
   char* decompressed = new char [map_length];                               // extra space, lest the data be 
@@ -249,10 +254,10 @@ void processMap(const nav_msgs::OccupancyGrid::ConstPtr& map)
     decompressed[i] = map->data.at(i);                                        // Copy data to compress.
   int compressed_bytes = LZ4_compress(decompressed, compressed, map_length);  // Compress
   // Store the new map
-  g_publish_map->compressed_data.clear();
-  g_publish_map->compressed_data.reserve(compressed_bytes);
+  publish_map->compressed_data.clear();
+  publish_map->compressed_data.reserve(compressed_bytes);
   for(int i = 0; i < compressed_bytes; i++)
-    g_publish_map->compressed_data.push_back(compressed[i]);
+    publish_map->compressed_data.push_back(compressed[i]);
   // Add transform to NetworkMap
   tf::TransformListener listener;
   bool will_publish = true;
@@ -260,7 +265,7 @@ void processMap(const nav_msgs::OccupancyGrid::ConstPtr& map)
   {
     tf::StampedTransform map_to_base_link;
     listener.lookupTransform(std::string("/map"), std::string("/base_link"), ros::Time::now(), map_to_base_link);
-    tf::transformStampedTFToMsg(map_to_base_link, g_publish_map->map_to_base_link);
+    tf::transformStampedTFToMsg(map_to_base_link, publish_map->map_to_base_link);
   }
   else
   {
@@ -269,7 +274,7 @@ void processMap(const nav_msgs::OccupancyGrid::ConstPtr& map)
   }
   // Publish
   if(will_publish)
-    g_external_map->publish(*g_publish_map);
+    g_external_map->publish(*publish_map);
   
   /// Inform
   ROS_INFO("Processed a new local map. Size: %d bytes. Compressed size: %d bytes. Ratio: %f", 

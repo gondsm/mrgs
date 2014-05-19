@@ -1,0 +1,13 @@
+<launch>
+  <arg name="bagfile"/>
+  
+  <!-- remapper -->
+  <node name="tf_remap" pkg="tf" type="tf_remap" args="_mappings:='[{old: /robot_1/laser, new: /laser},{old: /robot_1/base_link, new: /base_link},{old: /robot_1/odom, new: /odom}, {old: /robot_1/map, new: /map}]'"/>
+  
+  <!-- rosbag play -->
+  <node name="play" pkg="rosbag" type="play" args="--clock $(arg bagfile)" output="screen">
+    <remap from="/robot_1/base_scan" to="/scan"/>
+    <remap from="tf" to="tf_old"/>
+  </node>
+  
+</launch>

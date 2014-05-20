@@ -1,4 +1,5 @@
 <launch>
+  <param name="use_sim_time" value="true" />
   <arg name="working_interface" default="eth0" />
   
   <!-- mrgs -->

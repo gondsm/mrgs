@@ -3,12 +3,12 @@
   <arg name="bagfile"/>
   <arg name="prefix" />
   <arg name="interface" />
-  <!--include file="$(find mrgs_scripts)/launch/gmapping.launch"/-->
+  <include file="$(find mrgs_scripts)/launch/gmapping.launch"/>
   <include file="$(find mrgs_scripts)/launch/slamless_system.launch">
     <arg name="working_interface" value="$(arg interface)"/>
   </include>
-  <include file="$(find mrgs_scripts)/launch/jm_bags.launch">
+  <!--include file="$(find mrgs_scripts)/launch/jm_bags.launch">
     <arg name="bagfile" value="$(arg bagfile)"/>
     <arg name="prefix" value="$(arg prefix)"/>
-  </include>
+  </include-->
 </launch>

@@ -214,12 +214,12 @@ void newRobotInNetwork(char * ip)
   // Inform
   ROS_INFO("Connecting to new peer at %s.", ip);
   // Send
-  g_my_comm->openForeignRelay(ip, "/mrgs/external_map", true);
+  g_my_comm->openForeignRelay(ip, "mrgs/external_map", true);
   //char topic1[128];
   //g_my_comm->openForeignRelay(ip, "/external_map", wifi_comm::WiFiComm::concatTopicAndIp(topic1, "/external_map", ip));
   // Receive
   char topic[128];
-  ros::Subscriber sub = g_n->subscribe<mrgs_data_interface::NetworkMap>(wifi_comm::WiFiComm::concatTopicAndIp(topic, "/mrgs/external_map", ip),
+  ros::Subscriber sub = g_n->subscribe<mrgs_data_interface::NetworkMap>(wifi_comm::WiFiComm::concatTopicAndIp(topic, "mrgs/external_map", ip),
                                                                         1,  // Number of messages to keep on the input queue 
                                                                         boost::bind(processForeignMap, 
                                                                         std::string(ip), _1));                                                                       

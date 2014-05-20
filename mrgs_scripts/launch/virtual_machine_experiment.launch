@@ -3,7 +3,7 @@
   <arg name="bagfile"/>
   <arg name="prefix" />
   <arg name="interface" />
-  <include file="$(find mrgs_scripts)/launch/gmapping.launch"/>
+  <!--include file="$(find mrgs_scripts)/launch/gmapping.launch"/-->
   <include file="$(find mrgs_scripts)/launch/slamless_system.launch">
     <arg name="working_interface" value="$(arg interface)"/>
   </include>

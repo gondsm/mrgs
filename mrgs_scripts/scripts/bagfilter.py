@@ -3,7 +3,7 @@ import rosbag
 import re
 
 # Configure here:
-input = '/home/vsantos/test/1.bag'
+input = '/home/vsantos/host/rosbag_filtered/1.bag'
 output = '/home/vsantos/test/1_filtered.bag'
 #prefix_to_remove = "/robot_0"
 

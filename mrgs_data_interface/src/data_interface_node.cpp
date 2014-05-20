@@ -53,7 +53,8 @@
  * -> g_foreign_map_vector: A vector of foreign maps, for publishing in the local network.
  * -> g_my_comm: WiFiComm object, responsible for facilitating communication.
  * -> g_n: ROS node handle, must be global to make subscription of topics in callbacks possible.
- * -> g_subs: Vector os subscriptions.
+ * -> g_subs: Vector of subscriptions.
+ * -> g_listener: Must be global so that we have the correct transform already in memory when we receive a local map.
  * These variables are only written to on very very well determined moments, to prevent race conditions and other data-
  * -related issues.
  * I'm sure that with sufficient time, a few of these could be converted into local variables of some sort. However, in
@@ -109,6 +110,9 @@ std::vector<ros::Subscriber> g_subs;
 // To indicate whether or not we have a map from the local robot
 bool g_local_map_exists = false;
 
+// TF listener
+tf::TransformListener *g_listener;
+
 // Publishers:
 // To enable publishing from callback, to be edited once in main()
 ros::Publisher g_foreign_map_vector_publisher;
@@ -134,14 +138,14 @@ inline int getRobotID(std:: string mac){
 
 void processForeignMap(std::string ip, const mrgs_data_interface::NetworkMap::ConstPtr& msg)
 {
-  // Missing: process the received transform
   // Start counting time
+  ROS_INFO("Processing new foreign map.");
   ros::Time init = ros::Time::now();
   
   /// Determine which robot sent the map (i.e. determine its ID) and act on that knowledge.
   int id = getRobotID(msg->mac);
   // Inform the outside world of our reception.
-  ROS_INFO("Received a foreign map from %s, with mac %s, id %d.", ip.c_str(), msg->mac.c_str(), id);
+  ROS_INFO("Received from %s, with mac %s, id %d.", ip.c_str(), msg->mac.c_str(), id);
   bool is_repeated = false;
   if(id == -1)
   {
@@ -219,18 +223,20 @@ void newRobotInNetwork(char * ip)
   //g_my_comm->openForeignRelay(ip, "/external_map", wifi_comm::WiFiComm::concatTopicAndIp(topic1, "/external_map", ip));
   // Receive
   char topic[128];
+  ROS_INFO("Subscribing to remote topic.");
   ros::Subscriber sub = g_n->subscribe<mrgs_data_interface::NetworkMap>(wifi_comm::WiFiComm::concatTopicAndIp(topic, "mrgs/external_map", ip),
                                                                         1,  // Number of messages to keep on the input queue 
                                                                         boost::bind(processForeignMap, 
-                                                                        std::string(ip), _1));                                                                       
+                                                                        std::string(ip), _1));
   g_subs.push_back(sub);
+  ROS_INFO("Subscribed");
 }
 
 void processMap(const nav_msgs::OccupancyGrid::ConstPtr& map)
 {
   // This function processes a new local map. It updates the latest local map pointer and creates a new publish-able
   // NetworkMap.
-  
+  ROS_INFO("Processing local map.");
   // Start counting time
   ros::Time init = ros::Time::now();
   
@@ -259,12 +265,11 @@ void processMap(const nav_msgs::OccupancyGrid::ConstPtr& map)
   for(int i = 0; i < compressed_bytes; i++)
     publish_map->compressed_data.push_back(compressed[i]);
   // Add transform to NetworkMap
-  tf::TransformListener listener;
   bool will_publish = true;
-  if(listener.canTransform ("/base_link", "/map", ros::Time::now()))
+  if(g_listener->canTransform ("/base_link", "/map", map->header.stamp))
   {
     tf::StampedTransform map_to_base_link;
-    listener.lookupTransform(std::string("/map"), std::string("/base_link"), ros::Time::now(), map_to_base_link);
+    g_listener->lookupTransform(std::string("/map"), std::string("/base_link"), map->header.stamp, map_to_base_link);
     tf::transformStampedTFToMsg(map_to_base_link, publish_map->map_to_base_link);
   }
   else
@@ -305,6 +310,9 @@ int main(int argc, char **argv)
   g_foreign_map_vector_publisher = g_n->advertise<mrgs_data_interface::ForeignMapVector>("mrgs/foreign_maps", 10);
   g_latest_pose = g_n->advertise<mrgs_data_interface::LatestRobotPose>("mrgs/remote_poses", 10);
   g_since_last_pose = ros::Time::now();
+  
+  // tf init
+  g_listener = new tf::TransformListener;
   
   // Retrieve local MAC address
   std::string* mac_file_path = new std::string(std::string("/sys/class/net/") + 

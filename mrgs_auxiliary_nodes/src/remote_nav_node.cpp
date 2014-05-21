@@ -78,7 +78,7 @@ void processTF(const mrgs_complete_map::LatestMapTF::ConstPtr& remote_transform)
   tf::transformStampedMsgToTF(remote_transform->transform, new_transform);
   
   // Copy from temp to vector
-  g_map_transform_vector.at(remote_transform->id) = new tf::Transform(new_transform);
+  g_map_transform_vector.at(remote_transform->id) = new tf::Transform(new_transform.inverse());
   
 }
 
@@ -124,12 +124,15 @@ int main(int argc, char **argv)
       if(g_map_transform_vector.at(i) != NULL)
       {
         sprintf(frame, "/complete_map");
-        sprintf(child_frame, "/robot_%d/map", i);
+        if(i > 0)
+          sprintf(child_frame, "/robot_%d/map", i);
+        else
+          sprintf(child_frame, "/map");
         broadcaster.sendTransform(tf::StampedTransform(*g_map_transform_vector.at(i), ros::Time::now(), frame, child_frame));
       }
     }
     
-    for(int i = 0; i < g_base_transform_vector.size(); i++)
+    for(int i = 1; i < g_base_transform_vector.size(); i++)
     {
       sprintf(frame, "/robot_%d/map", i);
       sprintf(child_frame, "/robot_%d/base_link", i);

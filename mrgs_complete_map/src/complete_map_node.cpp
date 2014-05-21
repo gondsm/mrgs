@@ -115,11 +115,13 @@ void processForeignMaps(const mrgs_data_interface::ForeignMapVector::ConstPtr& m
   // This methodology is a bit wasteful, but will rarely be used, so it's passable.
   ROS_DEBUG("Allocating map and transform matrix.");
   std::vector<nav_msgs::OccupancyGrid> empty_vec;
+  std::vector<geometry_msgs::TransformStamped> empty_vec_tf;
   nav_msgs::OccupancyGrid empty_map;
   geometry_msgs::TransformStamped empty_transform;
   while(g_aligned_maps.size() < g_is_dirty.size()-1)
   {
     g_aligned_maps.push_back(empty_vec);
+    g_transforms.push_back(empty_vec_tf);
   }
   for(int i = 0; i < g_is_dirty.size()-1; i++)
   {
@@ -127,6 +129,7 @@ void processForeignMaps(const mrgs_data_interface::ForeignMapVector::ConstPtr& m
     {
       ROS_DEBUG("Pushing empty map and transform into line %d of their vectors.", i);
       g_aligned_maps.at(i).push_back(empty_map);
+      g_transforms.at(i).push_back(empty_transform);
       g_transforms.at(i).push_back(empty_transform);
     }
   }

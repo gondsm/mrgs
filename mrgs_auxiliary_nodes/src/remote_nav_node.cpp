@@ -132,7 +132,7 @@ int main(int argc, char **argv)
     for(int i = 0; i < g_base_transform_vector.size(); i++)
     {
       sprintf(frame, "/robot_%d/map");
-      sprintf(frame, "/robot_%d/base_link");
+      sprintf(frame, "/robot_%d/base_link", i);
       if(g_base_transform_vector.at(i) != NULL)
       {
         broadcaster.sendTransform(tf::StampedTransform(*g_base_transform_vector.at(i), ros::Time::now(), frame, child_frame));

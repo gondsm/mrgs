@@ -62,43 +62,39 @@
 
 // Global variables
 // Holds all current complete_map to map transforms
-std::vector<tf::StampedTransform*> g_map_transform_vector;
+std::vector<tf::Transform*> g_map_transform_vector;
 // Holds all current map to base_link transforms
-std::vector<tf::StampedTransform*> g_base_transform_vector;
+std::vector<tf::Transform*> g_base_transform_vector;
 
 void processTF(const mrgs_complete_map::LatestMapTF::ConstPtr& remote_transform)
 {
-  ROS_INFO("Processing new complete_map to map transform.");
-  // Same as processPose
-  if(g_map_transform_vector.size()-1 < remote_transform->id || g_map_transform_vector.at(remote_transform->id) == NULL)
-  {
-    ROS_INFO("Expanding vector.");
-    while(g_map_transform_vector.size()-1 < remote_transform->id)
-      g_map_transform_vector.push_back(NULL);
-    g_map_transform_vector.at(remote_transform->id) = new tf::StampedTransform;
-  }
-  tf::transformStampedMsgToTF(remote_transform->transform, *g_map_transform_vector.at(remote_transform->id));
-  // Missing: prepend robotN to the frames.
+  // Add the received transform to the vector.
+  ROS_INFO("Processing new complete_map to map transform.");  
+  while(g_map_transform_vector.size() < remote_transform->id+1)
+    g_map_transform_vector.push_back(NULL);
+  
+  // Copy received transform to temporary variable
+  tf::StampedTransform new_transform;
+  tf::transformStampedMsgToTF(remote_transform->transform, new_transform);
+  
+  // Copy from temp to vector
+  g_map_transform_vector.at(remote_transform->id) = new tf::Transform(new_transform);
+  
 }
 
 void processPose(const mrgs_data_interface::LatestRobotPose::ConstPtr& remote_pose)
 {
-  ROS_INFO("Processing new map to base_link transform.");
-  /*if(g_base_transform_vector.size()-1 < remote_pose->id || g_base_transform_vector.at(remote_pose->id) == NULL)
-  {
-    ROS_INFO("Expanding vector.");
-    while(g_base_transform_vector.size()-1 < remote_pose->id)
-      g_base_transform_vector.push_back(NULL);
-    g_base_transform_vector.at(remote_pose->id) = new tf::StampedTransform;
-  }*/
-  
+  // Add the received transform to the vector.
+  ROS_INFO("Processing new map to base_link transform.");  
   while(g_base_transform_vector.size() < remote_pose->id+1)
-  {
-    ROS_INFO("Pushing back a new transform.");
-    g_base_transform_vector.push_back(new tf::StampedTransform);
-  }
-  tf::transformStampedMsgToTF(remote_pose->transform, *g_base_transform_vector.at(remote_pose->id));
-  // Missing: prepend robotN to the frames.
+    g_base_transform_vector.push_back(NULL);
+  
+  // Copy received transform to temporary variable
+  tf::StampedTransform new_transform;
+  tf::transformStampedMsgToTF(remote_pose->transform, new_transform);
+  
+  // Copy from temp to vector
+  g_base_transform_vector.at(remote_pose->id) = new tf::Transform(new_transform);
 }
 
 
@@ -121,23 +117,30 @@ int main(int argc, char **argv)
     //    Iterate through the various vectors, publishing data in the correct
     //    TF frames. Don't forget to correctly build the header for the stamped
     //    StampedPoses.
+    char frame[30];
+    char child_frame[30];
     for(int i = 0; i < g_map_transform_vector.size(); i++)
     {
       if(g_map_transform_vector.at(i) != NULL)
       {
-        broadcaster.sendTransform(*g_map_transform_vector.at(i));
+        sprintf(frame, "/complete_map");
+        sprintf(child_frame, "/robot_%d/map", i);
+        broadcaster.sendTransform(tf::StampedTransform(*g_map_transform_vector.at(i), ros::Time::now(), frame, child_frame));
       }
     }
     
     for(int i = 0; i < g_base_transform_vector.size(); i++)
     {
+      sprintf(frame, "/robot_%d/map");
+      sprintf(frame, "/robot_%d/base_link");
       if(g_base_transform_vector.at(i) != NULL)
       {
-        broadcaster.sendTransform(*g_base_transform_vector.at(i));
+        broadcaster.sendTransform(tf::StampedTransform(*g_base_transform_vector.at(i), ros::Time::now(), frame, child_frame));
       }
     }
     
     ros::spinOnce();
+    r.sleep();
   }
 
   // Never to be called

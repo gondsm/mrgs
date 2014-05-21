@@ -68,9 +68,11 @@ std::vector<tf::StampedTransform*> g_base_transform_vector;
 
 void processTF(const mrgs_complete_map::LatestMapTF::ConstPtr& remote_transform)
 {
+  ROS_INFO("Processing new complete_map to map transform.");
   // Same as processPose
   if(g_map_transform_vector.size()-1 < remote_transform->id || g_map_transform_vector.at(remote_transform->id) == NULL)
   {
+    ROS_INFO("Expanding vector.");
     while(g_map_transform_vector.size()-1 < remote_transform->id)
       g_map_transform_vector.push_back(NULL);
     g_map_transform_vector.at(remote_transform->id) = new tf::StampedTransform;
@@ -81,11 +83,19 @@ void processTF(const mrgs_complete_map::LatestMapTF::ConstPtr& remote_transform)
 
 void processPose(const mrgs_data_interface::LatestRobotPose::ConstPtr& remote_pose)
 {
-  if(g_base_transform_vector.size()-1 < remote_pose->id || g_base_transform_vector.at(remote_pose->id) == NULL)
+  ROS_INFO("Processing new map to base_link transform.");
+  /*if(g_base_transform_vector.size()-1 < remote_pose->id || g_base_transform_vector.at(remote_pose->id) == NULL)
   {
+    ROS_INFO("Expanding vector.");
     while(g_base_transform_vector.size()-1 < remote_pose->id)
       g_base_transform_vector.push_back(NULL);
     g_base_transform_vector.at(remote_pose->id) = new tf::StampedTransform;
+  }*/
+  
+  while(g_base_transform_vector.size() < remote_pose->id+1)
+  {
+    ROS_INFO("Pushing back a new transform.");
+    g_base_transform_vector.push_back(new tf::StampedTransform);
   }
   tf::transformStampedMsgToTF(remote_pose->transform, *g_base_transform_vector.at(remote_pose->id));
   // Missing: prepend robotN to the frames.

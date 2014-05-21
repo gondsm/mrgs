@@ -18,5 +18,8 @@
   <node name="map_dam_node" pkg="mrgs_auxiliary_nodes" type="map_dam_node" output="screen"/>
   
   <!-- Rviz -->
-  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find mrgs_scripts)/rviz/only_map.vcg" />
+  <!--node name="rviz" pkg="rviz" type="rviz" args="-d $(find mrgs_scripts)/rviz/only_map.vcg" /-->
+
+  <!-- rqt_console -->
+  <node name="console" pkg="rqt_console" type="rqt_console"/>
 </launch>

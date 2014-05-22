@@ -266,10 +266,10 @@ void processMap(const nav_msgs::OccupancyGrid::ConstPtr& map)
     publish_map->compressed_data.push_back(compressed[i]);
   // Add transform to NetworkMap
   bool will_publish = true;
-  if(g_listener->canTransform ("/base_link", "/map", map->header.stamp))
+  if(g_listener->canTransform ("/base_link", "/map", ros::Time(0)))
   {
     tf::StampedTransform map_to_base_link;
-    g_listener->lookupTransform(std::string("/map"), std::string("/base_link"), map->header.stamp, map_to_base_link);
+    g_listener->lookupTransform(std::string("/map"), std::string("/base_link"), ros::Time(0), map_to_base_link);
     tf::transformStampedTFToMsg(map_to_base_link, publish_map->map_to_base_link);
   }
   else

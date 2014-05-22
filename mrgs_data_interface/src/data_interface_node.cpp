@@ -218,13 +218,13 @@ void newRobotInNetwork(char * ip)
   // Inform
   ROS_INFO("Connecting to new peer at %s.", ip);
   // Send
-  g_my_comm->openForeignRelay(ip, "/external_map", true);
+  g_my_comm->openForeignRelay(ip, "mrgs/external_map", true);
   //char topic1[128];
   //g_my_comm->openForeignRelay(ip, "/external_map", wifi_comm::WiFiComm::concatTopicAndIp(topic1, "/external_map", ip));
   // Receive
   char topic[128];
   ROS_INFO("Subscribing to remote topic.");
-  ros::Subscriber sub = g_n->subscribe<mrgs_data_interface::NetworkMap>(wifi_comm::WiFiComm::concatTopicAndIp(topic, "/external_map", ip),
+  ros::Subscriber sub = g_n->subscribe<mrgs_data_interface::NetworkMap>(wifi_comm::WiFiComm::concatTopicAndIp(topic, "mrgs/external_map", ip),
                                                                         1,  // Number of messages to keep on the input queue 
                                                                         boost::bind(processForeignMap, 
                                                                         std::string(ip), _1));
@@ -306,7 +306,7 @@ int main(int argc, char **argv)
   new_robot_callback = newRobotInNetwork;
   g_my_comm = new wifi_comm::WiFiComm(new_robot_callback);
   g_external_map = new ros::Publisher;
-  *g_external_map = g_n->advertise<mrgs_data_interface::NetworkMap>("/external_map", 10);
+  *g_external_map = g_n->advertise<mrgs_data_interface::NetworkMap>("mrgs/external_map", 10);
   g_foreign_map_vector_publisher = g_n->advertise<mrgs_data_interface::ForeignMapVector>("mrgs/foreign_maps", 10);
   g_latest_pose = g_n->advertise<mrgs_data_interface::LatestRobotPose>("mrgs/remote_poses", 10);
   g_since_last_pose = ros::Time::now();

@@ -291,7 +291,7 @@ int main(int argc, char **argv)
   g_client = n.serviceClient<mrgs_alignment::align>("align");
   mrgs_alignment::align srv;
   ros::Subscriber sub2 = n.subscribe("mrgs/foreign_maps", 1, processForeignMaps);
-  g_complete_map_pub = n.advertise<nav_msgs::OccupancyGrid>("complete_map", 10);
+  g_complete_map_pub = n.advertise<nav_msgs::OccupancyGrid>("mrgs/complete_map", 10);
   g_remote_tf_pub = n.advertise<mrgs_complete_map::LatestMapTF>("mrgs/remote_tf", 10);
   
   // ROS loop

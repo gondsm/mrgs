@@ -1,13 +1,19 @@
 <launch>
 
+  <!-- Arguments -->
+  <arg name="interface" default="eth0" />
+  <arg name="is_centralized" value="true" />
+
+  <!-- Parameters -->
   <!--param name="use_sim_time" value="true" /-->
-  <arg name="working_interface" default="eth0" />
+  <param name="is_centralized" value="$(arg is_centralized)" />
+  <param name="interface" value="$(arg interface)" />
   
   <!-- mrgs -->
   <!-- wifi_comm node -->
   <node name="wifi_discovery_node" pkg="wifi_comm" type="wifi_discovery_node" />
   <!-- mrgs_data_interface node-->
-  <node name="data_interface_node" pkg="mrgs_data_interface" type="data_interface_node" args="$(arg working_interface)" output="screen"/>
+  <node name="data_interface_node" pkg="mrgs_data_interface" type="data_interface_node" output="screen"/>
   <!-- dam node -->
   <node name="map_dam_node" pkg="mrgs_auxiliary_nodes" type="map_dam_node" output="screen"/>
   

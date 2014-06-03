@@ -10,6 +10,7 @@
   <!-- Arguments -->
   <arg name="interface" default="eth0" />
   <arg name="is_centralized" default="false" />
+  <arg name="launch_rviz" default="false" />
 
   <!-- Parameters -->
   <!--param name="use_sim_time" value="true" /-->
@@ -31,7 +32,7 @@
   <node name="map_dam_node" pkg="mrgs_auxiliary_nodes" type="map_dam_node" output="screen" unless="$(arg is_centralized)"/>
   
   <!-- Rviz -->
-  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find mrgs_scripts)/rviz/only_map.vcg" />
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find mrgs_scripts)/rviz/only_map.vcg" if="$(arg launch_rviz)" />
 
   <!-- rqt_console -->
   <!--node name="console" pkg="rqt_console" type="rqt_console"/-->

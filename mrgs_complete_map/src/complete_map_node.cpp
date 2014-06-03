@@ -264,7 +264,7 @@ void processForeignMaps(const mrgs_data_interface::ForeignMapVector::ConstPtr& m
       temp_transform.transform.translation.x += g_transforms.at(j).at(i/pow(2, j)).transform.translation.x;
       temp_transform.transform.translation.y += g_transforms.at(j).at(i/pow(2, j)).transform.translation.y;
       temp_transform.transform.translation.z += g_transforms.at(j).at(i/pow(2, j)).transform.translation.z;
-      temp_transform.transform.rotation = multiplyQuaternion(temp_transform.transform.rotation ,g_transforms.at(j).at(i/pow(2, j)).transform.rotation);
+      temp_transform.transform.rotation = multiplyQuaternion(temp_transform.transform.rotation, g_transforms.at(j).at(i/pow(2, j)).transform.rotation);
     }
     
     // Publish it

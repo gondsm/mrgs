@@ -108,9 +108,20 @@ int main(int argc, char **argv)
   ros::Subscriber sub2 = n.subscribe("mrgs/remote_tf", 10, processTF);
   tf::TransformBroadcaster broadcaster;
   
+  // Determine if we're on centralized operation:
+  bool centralized_mode;
+  if(!n.getParam("is_centralized", centralized_mode))
+  {
+    ROS_FATAL("Could not get a parameter indicating whether or not we're on centralized mode!");
+    return -1;
+  }
+  
   // ROS loop
   //ros::spin();
   ros::Rate r(10);
+  int first_foreign_robot = 1;
+  if(centralized_mode)
+    first_foreign_robot = 0;
   while(ros::ok())
   {
     // Broadcast all current data:
@@ -127,12 +138,15 @@ int main(int argc, char **argv)
         if(i > 0)
           sprintf(child_frame, "/robot_%d/map", i);
         else
-          sprintf(child_frame, "/map");
+          if(centralized_mode)
+            sprintf(child_frame, "/robot_%d/map", i);
+          else
+            sprintf(child_frame, "/map");
         broadcaster.sendTransform(tf::StampedTransform(*g_map_transform_vector.at(i), ros::Time::now(), frame, child_frame));
       }
     }
     
-    for(int i = 1; i < g_base_transform_vector.size(); i++)
+    for(int i = first_foreign_robot; i < g_base_transform_vector.size(); i++)
     {
       sprintf(frame, "/robot_%d/map", i);
       sprintf(child_frame, "/robot_%d/base_link", i);

@@ -204,7 +204,8 @@ void processForeignMap(std::string ip, const mrgs_data_interface::NetworkMap::Co
   
   /// Publish foreign maps and transform
   // We only publish if the local map exists, so we don't send an empty map to the complete map node.
-  if(g_local_map_exists == true)
+  // In cetralized mode, we only publish if we have at least two maps, of course.
+  if(g_local_map_exists == true || (g_centralized_mode == true && g_foreign_map_vector.size() > 1))
   {
     ROS_DEBUG("Publishing foreign_map_vector...");
     mrgs_data_interface::ForeignMapVector map_vector;
@@ -229,14 +230,17 @@ void newRobotInNetwork(char * ip)
   //char topic1[128];
   //g_my_comm->openForeignRelay(ip, "/external_map", wifi_comm::WiFiComm::concatTopicAndIp(topic1, "/external_map", ip));
   // Receive
-  char topic[128];
-  ROS_INFO("Subscribing to remote topic.");
-  ros::Subscriber sub = g_n->subscribe<mrgs_data_interface::NetworkMap>(wifi_comm::WiFiComm::concatTopicAndIp(topic, "/mrgs/external_map", ip),
-                                                                        1,  // Number of messages to keep on the input queue 
-                                                                        boost::bind(processForeignMap, 
-                                                                        std::string(ip), _1));
-  g_subs.push_back(sub);
-  ROS_INFO("Subscribed");
+  if(!g_transmitter_mode)
+  {
+    char topic[128];
+    ROS_INFO("Subscribing to remote topic.");
+    ros::Subscriber sub = g_n->subscribe<mrgs_data_interface::NetworkMap>(wifi_comm::WiFiComm::concatTopicAndIp(topic, "/mrgs/external_map", ip),
+                                                                          1,  // Number of messages to keep on the input queue 
+                                                                          boost::bind(processForeignMap, 
+                                                                          std::string(ip), _1));
+    g_subs.push_back(sub);
+    ROS_INFO("Subscribed");
+  }
 }
 
 void processMap(const nav_msgs::OccupancyGrid::ConstPtr& map)

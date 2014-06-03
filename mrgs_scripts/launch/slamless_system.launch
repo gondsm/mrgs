@@ -28,7 +28,7 @@
   <!-- remote_nav node -->
   <node name="remote_nav_node" pkg="mrgs_auxiliary_nodes" type="remote_nav_node" output="screen"/>  
   <!-- dam node -->
-  <node name="map_dam_node" pkg="mrgs_auxiliary_nodes" type="map_dam_node" output="screen"/>
+  <node name="map_dam_node" pkg="mrgs_auxiliary_nodes" type="map_dam_node" output="screen" unless="$(arg is_centralized)"/>
   
   <!-- Rviz -->
   <node name="rviz" pkg="rviz" type="rviz" args="-d $(find mrgs_scripts)/rviz/only_map.vcg" />

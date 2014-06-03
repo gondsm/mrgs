@@ -1,5 +1,4 @@
 <launch>
-
   <!-- Arguments -->
   <arg name="interface" default="eth0" />
   <arg name="is_centralized" value="true" />

@@ -109,8 +109,9 @@ wifi_comm::WiFiComm* g_my_comm;
 std::vector<ros::Subscriber> g_subs;
 // To indicate whether or not we have a map from the local robot
 bool g_local_map_exists = false;
-// To indicate whether or not we are operating in centralized mode
+// To indicate whether or not we are operating in centralized mode, and if we're a central or a transmitter node
 bool g_centralized_mode = false;
+bool g_transmitter_mode = false;
 
 // TF listener
 tf::TransformListener *g_listener;
@@ -307,7 +308,7 @@ int main(int argc, char **argv)
   ros::init(argc, argv, "data_interface_node");
   g_n = new ros::NodeHandle;
   
-  // Determine if we're on centralized mode
+  // Determine if we're on centralized mode, and if we're a transmitter
   if(!g_n->getParam("is_centralized", g_centralized_mode))
   {
     ROS_FATAL("Could not get a parameter indicating whether or not we're on centralized mode!");
@@ -315,11 +316,21 @@ int main(int argc, char **argv)
   }
   else
   {
-    if(g_centralized_mode)
-      ROS_INFO("Parameter received. Entering centralized mode.");
-    else
-      ROS_INFO("Parameter received. Entering distributed mode.");
+    if(!g_n->getParam("is_transmitter", g_transmitter_mode))
+    {
+      ROS_FATAL("Could not get a parameter indicating whether or not we're a transmitter!");
+      return -1;
+    }
   }
+  
+  // Report mode of operation:
+  if(!g_centralized_mode)
+      ROS_INFO("Parameters received. Entering distributed mode.");
+  else
+    if(g_transmitter_mode)
+      ROS_INFO("Parameters received. Entering centralized mode. This is a transmitter node.");
+    else
+      ROS_INFO("Parameters received. Entering centralized mode. This is a center node.");
   
   // Determine the interface we'll be using
   std::string interface;
@@ -346,7 +357,7 @@ int main(int argc, char **argv)
   // tf init
   g_listener = new tf::TransformListener;
   
-  if(!g_centralized_mode)
+  if(!g_centralized_mode || g_transmitter_mode)
   {
     // Retrieve local MAC address
     std::string* mac_file_path = new std::string(std::string("/sys/class/net/") + 

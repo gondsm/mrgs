@@ -39,15 +39,15 @@
  * complete_map_node
  * 
  * Summary:
- * 
  * This node is responsible for processing a vector containing all the latest maps we've acquired from the local and
  * remote robots.
  * 
  * Methodology:
- *  1. Receive maps
- *  2. Build a tree-like structure for storing and updating merged maps
- *  3. Send maps two by two to be aligned as needed
- *  4. Publish the complete map
+ *  1. Receive maps;
+ *  2. Build a tree-like structure for storing and updating merged maps, and another for transforms;
+ *  3. Send maps two by two to be aligned as needed. Merged maps and transforms are stored in their respective trees;
+ *  4. Calculate and publish the complete_map to map transformations for each robot in the team;
+ *  5. Publish the complete map.
  * 
  */
 // ROS includes

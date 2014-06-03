@@ -1,13 +1,26 @@
+<!--
+  This file takes care of launching the whole system.
+  Arguments are:
+    working_interface: the network interface the system will use to communicate;
+    is_centralized: a boolean indicating whether or not the system will be operating in centralized mode. This is mainly
+                    used by the data interface node to work out how to build the map vector.
+-->
 <launch>
 
+  <!-- Arguments -->
+  <arg name="interface" default="eth0" />
+  <arg name="is_centralized" default="false" />
+
+  <!-- Parameters -->
   <!--param name="use_sim_time" value="true" /-->
-  <arg name="working_interface" default="eth0" />
+  <param name="is_centralized" value="$(arg is_centralized)" />
+  <param name="interface" value="$(arg interface)" />
   
   <!-- mrgs -->
   <!-- wifi_comm node -->
   <node name="wifi_discovery_node" pkg="wifi_comm" type="wifi_discovery_node" />
   <!-- mrgs_data_interface node-->
-  <node name="data_interface_node" pkg="mrgs_data_interface" type="data_interface_node" args="$(arg working_interface)" output="screen"/>
+  <node name="data_interface_node" pkg="mrgs_data_interface" type="data_interface_node" output="screen"/>
   <!-- mrgs_complete_map node -->
   <node name="complete_map_node" pkg="mrgs_complete_map" type="complete_map_node" output="screen"/>
   <!-- mrgs_alignment node -->

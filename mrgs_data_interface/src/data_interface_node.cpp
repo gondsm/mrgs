@@ -109,6 +109,8 @@ wifi_comm::WiFiComm* g_my_comm;
 std::vector<ros::Subscriber> g_subs;
 // To indicate whether or not we have a map from the local robot
 bool g_local_map_exists = false;
+// To indicate whether or not we are operating in centralized mode
+bool g_centralized_mode = false;
 
 // TF listener
 tf::TransformListener *g_listener;
@@ -127,6 +129,10 @@ ros::Time g_since_last_pose;
 
 inline int getRobotID(std:: string mac){
   // Find the desired MAC's index
+  // If we're on centralized mode, this may show up empty once
+  if(g_peer_macs.size() == 0)
+    return -1;
+  // If not, we search
   int index = std::distance(g_peer_macs.begin(), std::find(g_peer_macs.begin(), g_peer_macs.end(), mac));
   // If the index isn't smaller than the size, the the desired MAC doesn't exist, 
   // and we return -1 to indicate just that.
@@ -290,16 +296,42 @@ void processMap(const nav_msgs::OccupancyGrid::ConstPtr& map)
 int main(int argc, char **argv)
 {
   // Argument parsing
-  if(argc < 2)
+  /*if(argc < 2)
   {
     ROS_FATAL("I need the interface you want me to work with (must be the same olsrd is using)!");
     ROS_INFO("Usage: rosrun <package> <node> <interface>");
     return -1;
-  }
+  }*/
 
   // ROS init
   ros::init(argc, argv, "data_interface_node");
   g_n = new ros::NodeHandle;
+  
+  // Determine if we're on centralized mode
+  if(!g_n->getParam("is_centralized", g_centralized_mode))
+  {
+    ROS_FATAL("Could not get a parameter indicating whether or not we're on centralized mode!");
+    return -1;
+  }
+  else
+  {
+    if(g_centralized_mode)
+      ROS_INFO("Parameter received. Entering centralized mode.");
+    else
+      ROS_INFO("Parameter received. Entering distributed mode.");
+  }
+  
+  // Determine the interface we'll be using
+  std::string interface;
+  if(!g_n->getParam("interface", interface))
+  {
+    ROS_FATAL("Could not get a parameter indicating the interface we'll be using!");
+    return -1;
+  }
+  else
+  {
+    ROS_INFO("Parameter received. Using interface %s.", interface.c_str());
+  }
   
   // wifi_comm init
   boost::function<void (char *)> new_robot_callback;
@@ -314,31 +346,35 @@ int main(int argc, char **argv)
   // tf init
   g_listener = new tf::TransformListener;
   
-  // Retrieve local MAC address
-  std::string* mac_file_path = new std::string(std::string("/sys/class/net/") + 
-                                               std::string(argv[1]) + 
-                                               std::string("/address"));
-  std::string* local_mac = new std::string;
-  std::ifstream mac_file;
-  mac_file.open((*mac_file_path).c_str(), std::ios::in);
-  if(mac_file.is_open())
+  if(!g_centralized_mode)
   {
-    mac_file >> *local_mac;
-    mac_file.close();
-    g_peer_macs.push_back(*local_mac);
-    delete local_mac;                   // No need to keep this extra stuff in memory
-    delete mac_file_path;               // Idem
+    // Retrieve local MAC address
+    std::string* mac_file_path = new std::string(std::string("/sys/class/net/") + 
+                                                 interface + 
+                                                 std::string("/address"));
+    ROS_DEBUG("Retrieving MAC from %s.", mac_file_path->c_str());                                                
+    std::string* local_mac = new std::string;
+    std::ifstream mac_file;
+    mac_file.open((*mac_file_path).c_str(), std::ios::in);
+    if(mac_file.is_open())
+    {
+      mac_file >> *local_mac;
+      mac_file.close();
+      g_peer_macs.push_back(*local_mac);
+      delete local_mac;                   // No need to keep this extra stuff in memory
+      delete mac_file_path;               // Idem
+    }
+    else
+    {
+      ROS_FATAL("Can't open mac address file, did you input the right interface?");
+      return -1;
+    }
+    
+    // Push an empty map into the foreign map vector, to keep it aligned with IDs.
+    mrgs_data_interface::ForeignMap emptyMap;
+    emptyMap.robot_id = 0;
+    g_foreign_map_vector.push_back(emptyMap);
   }
-  else
-  {
-    ROS_FATAL("Can't open mac address file, terminating.");
-    return -1;
-  }
-  
-  // Push an empty map into the foreign map vector, to keep it aligned with IDs.
-  mrgs_data_interface::ForeignMap emptyMap;
-  emptyMap.robot_id = 0;
-  g_foreign_map_vector.push_back(emptyMap);
   
   // Declare callbacks
   ros::Subscriber map = g_n->subscribe<nav_msgs::OccupancyGrid>("mrgs/local_map", 1, processMap);

@@ -84,7 +84,7 @@
 #define MRGS_LOW_PROB_THRESH 10.0
 #define MRGS_HIGH_PROB_THRESH 90.0
 
-bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response &res)
+bool align_old(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response &res)
 {
   ros::Time init = ros::Time::now();
   ROS_INFO("Received an alignment request. Alignment initiated.");
@@ -400,6 +400,11 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
   
   // Successfully return
   return true;
+}
+
+bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response &res)
+{
+  return false;
 }
 
 int main(int argc, char **argv)

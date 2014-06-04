@@ -625,8 +625,16 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
 
   /// Adjust the number of hypotheses to calculate next according to this performance
   double total_time = (ros::Time::now()-init).toSec();
-  
-  
+  if(total_time > 5.0 && g_n_hypothesis > 4)
+  {
+    g_n_hypothesis/=2;
+    ROS_INFO("Merging took longer than 5 seconds. Cutting the number of hypotheses to %d.", g_n_hypothesis);
+  }
+  else if(total_time < 5.0)
+  {
+    g_n_hypothesis++;
+    ROS_INFO("Merging took less than 5 seconds. Incrementing the number of hypotheses to %d.", g_n_hypothesis);
+  }
   // Final report
   ROS_INFO("Results sent. Total service time was %fs.");
   
@@ -646,6 +654,7 @@ int main(int argc, char **argv)
   if(a.load_map(800,800,"../calibration/intel.txt")==1 || b.load_map(800,800,"../calibration/intel30.txt")==1)
   {
     ROS_WARN("Calibration files could not be opened. Calibration will not be performed.");
+    g_n_hypothesis = 4;
   }
   else
   {
@@ -656,6 +665,9 @@ int main(int argc, char **argv)
     g_n_hypothesis = ceil(10/calibration_time.toSec());
     ROS_INFO("Getting a hypothesis took %f seconds. Setting the number of hypotheses to %d.", calibration_time.toSec(), g_n_hypothesis);
   }
+  // Free memory
+  a.resize_map(1,1);
+  b.resize_map(1,1);
 
   /// Spin
   ros::spin();

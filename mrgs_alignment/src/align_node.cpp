@@ -630,7 +630,7 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
     g_n_hypothesis/=2;
     ROS_INFO("Merging took longer than 5 seconds. Cutting the number of hypotheses to %d.", g_n_hypothesis);
   }
-  else if(total_time < 5.0)
+  else if(total_time < 3.0)
   {
     g_n_hypothesis++;
     ROS_INFO("Merging took less than 5 seconds. Incrementing the number of hypotheses to %d.", g_n_hypothesis);

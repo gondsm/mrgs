@@ -621,6 +621,7 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
   res.transform2.transform.translation.y += hyp[0].deltay;
 
   /// If we got this far, everything is okay
+  ROS_INFO("Results sent. Total service time was %fs.", (ros::Time::now()-init).toSec());
   return true;
 }
 

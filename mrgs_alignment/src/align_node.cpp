@@ -84,6 +84,10 @@
 #define MRGS_LOW_PROB_THRESH 10.0
 #define MRGS_HIGH_PROB_THRESH 90.0
 
+// Number of hypothesis we calculate. The bigger this number, the better our chance to find the right transformation, 
+// and the more CPU we need.
+int g_n_hypothesis = 4;
+
 bool align_old(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response &res)
 {
   ros::Time init = ros::Time::now();
@@ -521,9 +525,8 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
   }
   
   /// Call mapmerge to determine the transformation
-  int n_hypothesis = 4; // Maybe this should be received as a parameter?
   ROS_DEBUG("Calculating hypotheses.");
-  std::vector<mapmerge::transformation> hyp = mapmerge::get_hypothesis(temp_a,temp_b,n_hypothesis,1,false);
+  std::vector<mapmerge::transformation> hyp = mapmerge::get_hypothesis(temp_a,temp_b, g_n_hypothesis,1,false);
   
   /// Determine if padding is necessary so that we don't lose information in map transformations
   // If it is necessary, we must apply it before transforming the maps
@@ -620,16 +623,41 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
   res.transform2.transform.translation.x += hyp[0].deltax;
   res.transform2.transform.translation.y += hyp[0].deltay;
 
+  /// Adjust the number of hypotheses to calculate next according to this performance
+  double total_time = (ros::Time::now()-init).toSec();
+  
+  
+  // Final report
+  ROS_INFO("Results sent. Total service time was %fs.");
+  
   /// If we got this far, everything is okay
-  ROS_INFO("Results sent. Total service time was %fs.", (ros::Time::now()-init).toSec());
   return true;
 }
 
 int main(int argc, char **argv)
 {
+  /// ROS Init
   ros::init(argc, argv, "align_node");
   ros::NodeHandle n;
   ros::ServiceServer service = n.advertiseService("align", align);
+  
+  /// Calibration
+  mapmerge::grid_map a,b;
+  if(a.load_map(800,800,"../calibration/intel.txt")==1 || b.load_map(800,800,"../calibration/intel30.txt")==1)
+  {
+    ROS_WARN("Calibration files could not be opened. Calibration will not be performed.");
+  }
+  else
+  {
+    ROS_INFO("Starting alignment node calibration.");
+    ros::Time calibration_init = ros::Time::now();
+    std::vector<mapmerge::transformation> hyp = mapmerge::get_hypothesis(a,b,1,1,false);
+    ros::Duration calibration_time = (ros::Time::now()-calibration_init);
+    g_n_hypothesis = ceil(10/calibration_time.toSec());
+    ROS_INFO("Getting a hypothesis took %f seconds. Setting the number of hypotheses to %d.", calibration_time.toSec(), g_n_hypothesis);
+  }
+
+  /// Spin
   ros::spin();
 
   return 0;

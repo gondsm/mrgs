@@ -220,9 +220,11 @@ void processForeignMaps(const mrgs_data_interface::ForeignMapVector::ConstPtr& m
             srv.request.crop = false;
           }
           ROS_DEBUG("Sending request...");
-          if(!g_client.call(srv)) 
+          if(!g_client.call(srv))
+          {
             ROS_ERROR("Error calling service! Aborting operation!");
             return;
+          }
           else
           {
             ROS_DEBUG("Got a response! Adding map to our matrix. Index = %f.", srv.response.success_coefficient);

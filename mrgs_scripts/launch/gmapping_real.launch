@@ -1,0 +1,14 @@
+<!-- GMapping launch file for default-quality, online mapping. -->
+<launch>
+  <param name="use_sim_time" value="false" />
+  <node name="gmapping" pkg="gmapping" type="slam_gmapping">
+    <!--param name="particles" value="100" /-->
+    <param name="resolution" value="0.05" />
+    <param name="xmin" value="0" />
+    <param name="xmax" value="1" />
+    <param name="ymin" value="0" />
+    <param name="ymax" value="1" />
+    <!--param name="tf_prefix" value="/robot_1" /-->
+  </node>
+</launch>
+

@@ -636,7 +636,7 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
     ROS_INFO("Merging took less than 5 seconds. Incrementing the number of hypotheses to %d.", g_n_hypothesis);
   }
   // Final report
-  ROS_INFO("Results sent. Total service time was %fs.");
+  ROS_INFO("Results sent. Total service time was %fs.", total_time);
   
   /// If we got this far, everything is okay
   return true;

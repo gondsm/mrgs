@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.4.6)
 include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 
 # Pull the latest lz4. We should check if we already have it!
-#execute_process(COMMAND svn checkout http://lz4.googlecode.com/svn/trunk/ ../src/lz4)
+execute_process(COMMAND ../src/install_lz4.sh)
 
 # Set the build type.  Options are:
 #  Coverage       : w/ debug symbols, w/o optimization, w/ code-coverage

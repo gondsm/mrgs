@@ -81,8 +81,8 @@
 #include <math.h>
 
 // Thresholds for deciding whether cells are occupied or free
-#define MRGS_LOW_PROB_THRESH 10.0
-#define MRGS_HIGH_PROB_THRESH 90.0
+#define MRGS_LOW_PROB_THRESH 10
+#define MRGS_HIGH_PROB_THRESH 70
 
 // Number of hypothesis we calculate. The bigger this number, the better our chance to find the right transformation, 
 // and the more CPU we need.

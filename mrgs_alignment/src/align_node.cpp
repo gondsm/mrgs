@@ -86,7 +86,7 @@
 
 // Number of hypothesis we calculate. The bigger this number, the better our chance to find the right transformation, 
 // and the more CPU we need.
-int g_n_hypothesis = 4;
+int g_n_hypothesis;
 
 bool align_old(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response &res)
 {
@@ -653,7 +653,7 @@ int main(int argc, char **argv)
   mapmerge::grid_map a,b;
   if(a.load_map(800,800,"../calibration/intel.txt")==1 || b.load_map(800,800,"../calibration/intel30.txt")==1)
   {
-    ROS_WARN("Calibration files could not be opened. Calibration will not be performed.");
+    ROS_WARN("Calibration files could not be opened. Calibration will not be performed. First few executions may be slow.");
     g_n_hypothesis = 4;
   }
   else

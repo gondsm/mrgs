@@ -66,15 +66,15 @@ class RemoteNav{
   {
     // Add the received transform to the vector.
     ROS_INFO("Processing new complete_map to map transform.");  
-    while(g_map_transform_vector.size() < remote_transform->id+1)
-      g_map_transform_vector.push_back(NULL);
+    while(map_transform_vector.size() < remote_transform->id+1)
+      map_transform_vector.push_back(NULL);
     
     // Copy received transform to temporary variable
     tf::StampedTransform new_transform;
     tf::transformStampedMsgToTF(remote_transform->transform, new_transform);
     
     // Copy from temp to vector
-    g_map_transform_vector.at(remote_transform->id) = new tf::Transform(new_transform.inverse());
+    map_transform_vector.at(remote_transform->id) = new tf::Transform(new_transform.inverse());
     
   }
   // Method that processes remote map to base_link transforms
@@ -82,17 +82,17 @@ class RemoteNav{
   {
     // Add the received transform to the vector.
     ROS_INFO("Processing new map to base_link transform.");  
-    while(g_base_transform_vector.size() < remote_pose->id+1)
-      g_base_transform_vector.push_back(NULL);
+    while(base_transform_vector.size() < remote_pose->id+1)
+      base_transform_vector.push_back(NULL);
     
     // Copy received transform to temporary variable
     tf::StampedTransform new_transform;
     tf::transformStampedMsgToTF(remote_pose->transform, new_transform);
     
     // Copy from temp to vector
-    g_base_transform_vector.at(remote_pose->id) = new tf::Transform(new_transform);
+    base_transform_vector.at(remote_pose->id) = new tf::Transform(new_transform);
   }
-  
+  // Constructor
   RemoteNav(ros::NodeHandle * n_p)
   {
     remote_pose_sub = n_p->subscribe("mrgs/remote_poses", 10, &RemoteNav::processPose, this);
@@ -107,18 +107,17 @@ class RemoteNav{
     else
       first_foreign_robot = 1;
   }
-  
+  // Broadcasts all current data into TF
   void broadcastData()
   {
-    // Broadcast all current data:
     //    Iterate through the various vectors, publishing data in the correct
     //    TF frames. Don't forget to correctly build the header for the stamped
     //    StampedPoses.
     char frame[30];
     char child_frame[30];
-    for(int i = 0; i < g_map_transform_vector.size(); i++)
+    for(int i = 0; i < map_transform_vector.size(); i++)
     {
-      if(g_map_transform_vector.at(i) != NULL)
+      if(map_transform_vector.at(i) != NULL)
       {
         sprintf(frame, "/complete_map");
         if(i > 0)
@@ -128,31 +127,32 @@ class RemoteNav{
             sprintf(child_frame, "/robot_%d/map", i);
           else
             sprintf(child_frame, "/map");
-        broadcaster.sendTransform(tf::StampedTransform(*g_map_transform_vector.at(i), ros::Time::now(), frame, child_frame));
+        broadcaster.sendTransform(tf::StampedTransform(*map_transform_vector.at(i), ros::Time::now(), frame, child_frame));
       }
     }
     
-    for(int i = first_foreign_robot; i < g_base_transform_vector.size(); i++)
+    for(int i = first_foreign_robot; i < base_transform_vector.size(); i++)
     {
       sprintf(frame, "/robot_%d/map", i);
       sprintf(child_frame, "/robot_%d/base_link", i);
-      if(g_base_transform_vector.at(i) != NULL)
+      if(base_transform_vector.at(i) != NULL)
       {
-        broadcaster.sendTransform(tf::StampedTransform(*g_base_transform_vector.at(i), ros::Time::now(), frame, child_frame));
+        broadcaster.sendTransform(tf::StampedTransform(*base_transform_vector.at(i), ros::Time::now(), frame, child_frame));
       }
     }
   }
   
   private:
-  // Global variables
   // Holds all current complete_map to map transforms
-  std::vector<tf::Transform*> g_map_transform_vector;
+  std::vector<tf::Transform*> map_transform_vector;
   // Holds all current map to base_link transforms
-  std::vector<tf::Transform*> g_base_transform_vector;
+  std::vector<tf::Transform*> base_transform_vector;
+  // Subscribers
   ros::Subscriber remote_pose_sub;
   ros::Subscriber remote_tf_sub;
   // Transform broadcaster
   tf::TransformBroadcaster broadcaster;
+  // Variables related to centralized operation
   int first_foreign_robot;
   bool centralized_mode;
 };
@@ -170,6 +170,7 @@ int main(int argc, char **argv)
   ros::Rate r(10);
   while(ros::ok())
   {
+    // Regular execution: broadcast current transforms and check for the existence of new ones in the queue
     nav.broadcastData();
     ros::spinOnce();
     r.sleep();

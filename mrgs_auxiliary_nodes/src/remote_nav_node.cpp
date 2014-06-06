@@ -59,69 +59,56 @@
 #include "geometry_msgs/PoseStamped.h"
 #include <cstdlib>
 
-// Global variables
-// Holds all current complete_map to map transforms
-std::vector<tf::Transform*> g_map_transform_vector;
-// Holds all current map to base_link transforms
-std::vector<tf::Transform*> g_base_transform_vector;
-
-void processTF(const mrgs_complete_map::LatestMapTF::ConstPtr& remote_transform)
-{
-  // Add the received transform to the vector.
-  ROS_INFO("Processing new complete_map to map transform.");  
-  while(g_map_transform_vector.size() < remote_transform->id+1)
-    g_map_transform_vector.push_back(NULL);
-  
-  // Copy received transform to temporary variable
-  tf::StampedTransform new_transform;
-  tf::transformStampedMsgToTF(remote_transform->transform, new_transform);
-  
-  // Copy from temp to vector
-  g_map_transform_vector.at(remote_transform->id) = new tf::Transform(new_transform.inverse());
-  
-}
-
-void processPose(const mrgs_data_interface::LatestRobotPose::ConstPtr& remote_pose)
-{
-  // Add the received transform to the vector.
-  ROS_INFO("Processing new map to base_link transform.");  
-  while(g_base_transform_vector.size() < remote_pose->id+1)
-    g_base_transform_vector.push_back(NULL);
-  
-  // Copy received transform to temporary variable
-  tf::StampedTransform new_transform;
-  tf::transformStampedMsgToTF(remote_pose->transform, new_transform);
-  
-  // Copy from temp to vector
-  g_base_transform_vector.at(remote_pose->id) = new tf::Transform(new_transform);
-}
-
-
-
-int main(int argc, char **argv)
-{
-  // ROS initialization
-  ros::init(argc, argv, "remote_nav_node");
-  ros::NodeHandle n;
-  ros::Subscriber sub1 = n.subscribe("mrgs/remote_poses", 10, processPose);
-  ros::Subscriber sub2 = n.subscribe("mrgs/remote_tf", 10, processTF);
-  tf::TransformBroadcaster broadcaster;
-  
-  // Determine if we're on centralized operation:
-  bool centralized_mode;
-  if(!n.getParam("is_centralized", centralized_mode))
+class RemoteNav{
+  public:
+  // Method that processes remote complete_map to map transforms
+  void processTF(const mrgs_complete_map::LatestMapTF::ConstPtr& remote_transform)
   {
-    ROS_FATAL("Could not get a parameter indicating whether or not we're on centralized mode!");
-    return -1;
+    // Add the received transform to the vector.
+    ROS_INFO("Processing new complete_map to map transform.");  
+    while(g_map_transform_vector.size() < remote_transform->id+1)
+      g_map_transform_vector.push_back(NULL);
+    
+    // Copy received transform to temporary variable
+    tf::StampedTransform new_transform;
+    tf::transformStampedMsgToTF(remote_transform->transform, new_transform);
+    
+    // Copy from temp to vector
+    g_map_transform_vector.at(remote_transform->id) = new tf::Transform(new_transform.inverse());
+    
+  }
+  // Method that processes remote map to base_link transforms
+  void processPose(const mrgs_data_interface::LatestRobotPose::ConstPtr& remote_pose)
+  {
+    // Add the received transform to the vector.
+    ROS_INFO("Processing new map to base_link transform.");  
+    while(g_base_transform_vector.size() < remote_pose->id+1)
+      g_base_transform_vector.push_back(NULL);
+    
+    // Copy received transform to temporary variable
+    tf::StampedTransform new_transform;
+    tf::transformStampedMsgToTF(remote_pose->transform, new_transform);
+    
+    // Copy from temp to vector
+    g_base_transform_vector.at(remote_pose->id) = new tf::Transform(new_transform);
   }
   
-  // ROS loop
-  //ros::spin();
-  ros::Rate r(10);
-  int first_foreign_robot = 1;
-  if(centralized_mode)
-    first_foreign_robot = 0;
-  while(ros::ok())
+  RemoteNav(ros::NodeHandle * n_p)
+  {
+    remote_pose_sub = n_p->subscribe("mrgs/remote_poses", 10, &RemoteNav::processPose, this);
+    remote_tf_sub = n_p->subscribe("mrgs/remote_tf", 10, &RemoteNav::processTF, this);
+    if(!n_p->getParam("is_centralized", centralized_mode))
+    {
+      ROS_FATAL("Could not get a parameter indicating whether or not we're on centralized mode!");
+      centralized_mode = false;
+    }
+    if(centralized_mode)
+      first_foreign_robot = 0;
+    else
+      first_foreign_robot = 1;
+  }
+  
+  void broadcastData()
   {
     // Broadcast all current data:
     //    Iterate through the various vectors, publishing data in the correct
@@ -154,7 +141,36 @@ int main(int argc, char **argv)
         broadcaster.sendTransform(tf::StampedTransform(*g_base_transform_vector.at(i), ros::Time::now(), frame, child_frame));
       }
     }
-    
+  }
+  
+  private:
+  // Global variables
+  // Holds all current complete_map to map transforms
+  std::vector<tf::Transform*> g_map_transform_vector;
+  // Holds all current map to base_link transforms
+  std::vector<tf::Transform*> g_base_transform_vector;
+  ros::Subscriber remote_pose_sub;
+  ros::Subscriber remote_tf_sub;
+  // Transform broadcaster
+  tf::TransformBroadcaster broadcaster;
+  int first_foreign_robot;
+  bool centralized_mode;
+};
+
+
+int main(int argc, char **argv)
+{
+  // ROS initialization
+  ros::init(argc, argv, "remote_nav_node");
+  ros::NodeHandle n;
+  RemoteNav nav(&n);
+  
+  // ROS loop
+  //ros::spin();
+  ros::Rate r(10);
+  while(ros::ok())
+  {
+    nav.broadcastData();
     ros::spinOnce();
     r.sleep();
   }

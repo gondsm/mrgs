@@ -59,23 +59,26 @@ class MapDam{
   // Callback for /map
   void processUnfilteredMap(const nav_msgs::OccupancyGrid::ConstPtr& unfiltered_map)
   {
-    g_last_map = *unfiltered_map;
-    g_map_publisher.publish(unfiltered_map);
+    last_map = *unfiltered_map;
+    map_publisher.publish(unfiltered_map);
   }
-  
+  // Constructor
   MapDam(ros::NodeHandle* n_p)
   {
-    g_first_map = true;
-    g_map_publisher = n_p->advertise<nav_msgs::OccupancyGrid>("mrgs/local_map", 2);
+    first_map = true;
+    map_publisher = n_p->advertise<nav_msgs::OccupancyGrid>("mrgs/local_map", 2);
+    map_subscriber = n_p->subscribe("map", 2, &MapDam::processUnfilteredMap, this);
   }
   
   private:
   // Map Publisher
-  nav_msgs::OccupancyGrid g_last_map;
+  nav_msgs::OccupancyGrid last_map;
   // Is this the first map we've ever received?
-  bool g_first_map;
+  bool first_map;
   // Map publisher
-  ros::Publisher g_map_publisher;
+  ros::Publisher map_publisher;
+  // Map subscriber
+  ros::Subscriber map_subscriber;
 };
 
 
@@ -85,7 +88,6 @@ int main(int argc, char **argv)
   ros::init(argc, argv, "remote_map_node");
   ros::NodeHandle n;
   MapDam dam(&n);
-  ros::Subscriber sub1 = n.subscribe("map", 2, &MapDam::processUnfilteredMap, &dam);
   
   // ROS loop
   ros::spin();

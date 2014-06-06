@@ -45,6 +45,8 @@
  * Methodology:
  * The node intercepts the /map topic and publishes a new topic, which the data interface subscribes to. Since the data
  * interface node is the entry point for maps in the system, this is enough to control the way maps enter the system.
+ * Currently, we simply insert all the maps we receive into the system, acting as an over-complicated topic redirector.
+ * However, the plans are to integrate intelligence into this node.
  * 
  */
 // ROS includes

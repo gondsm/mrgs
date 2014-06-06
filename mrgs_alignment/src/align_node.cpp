@@ -44,19 +44,16 @@
  * my thesis).
  * I've been careful to ensure that this node communicates via standard ROS datatypes, so that it is easily swapped by
  * another available map fusion technique.
+ * It is important to note that the node is currently ignoring requests for cropped grids.
  * 
  * Methodology:
- *    1. Calculate how large the mapmerge grids must be in order to accomodate the incoming OccupancyGrids, and also for 
- * those grids to be able to rotate freely without loss of information.
- *    2. Copy incoming grids into mapmerge grids, taking into account the padding we've added, which implies a
- * translation step so that the cell that was previously the grid's center remains its center (which guarantees we won't
- * lose any information in rotation since rotations are done around the grid's center). We must also check for the
- * existence of at least one occupied cell in each map, or we'll get a segfault.
+ *    1. Calculate how large the mapmerge grids must be in order to accomodate the incoming OccupancyGrids.
+ *    2. Copy incoming grids into mapmerge grids, taking into account the padding we need to add added. We must also 
+ * check for the existence of at least one occupied cell in each map, or we'll get a runtime exception.
  *    3. Feed the copied grids into the algorithm.
  *    4. Apply the suggested rotation.
- *    5. (TODO) Determine if the to-be-translation will cause loss of data, and if so, accordingly pad the receiving map
- * in the necessary direction.
- *    6. Apply the suggested translation.
+ *    5. Apply the suggested translation.
+ *    6. Calculate the transforms.
  *    7. Pack results into response message, including transformations (which implies calculating them).
  */
 

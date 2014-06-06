@@ -1,11 +1,9 @@
 <!--
   This file takes care of launching the whole system.
   Arguments are:
-    working_interface: the network interface the system will use to communicate;
+    interface: the network interface the system will use to communicate;
     is_centralized: a boolean indicating whether or not the system will be operating in centralized mode. This is mainly
                     used by the data interface node to work out how to build the map vector.
-    is_transmitter: if we are using the centralized mode, this parameter is used to check whether this robot is just
-                    a transmitter or if it is a processing node.
 -->
 <launch>
 

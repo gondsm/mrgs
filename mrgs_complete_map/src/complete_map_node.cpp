@@ -41,6 +41,9 @@
  * Summary:
  * This node is responsible for processing a vector containing all the latest maps we've acquired from the local and
  * remote robots.
+ * It receives a vector containing all the latest maps, even the repeated ones (so that the vector always contains the
+ * latest map from each robot). Then it uses timestamps to determine which parts of the map tree need to be rebuilt, if
+ * any.
  * 
  * Methodology:
  *  1. Receive maps;
@@ -58,7 +61,7 @@
 #include <cstdlib>
 
 // Global variables
-// Program state:
+// Node state:
 // To be edited only by the /foreign_maps callback
 std::vector<ros::Time> g_latest_map_times;
 // To be edited only by the processForeignMaps callback
@@ -77,7 +80,7 @@ ros::Publisher g_remote_tf_pub;
 
 inline geometry_msgs::Quaternion multiplyQuaternion(geometry_msgs::Quaternion q1, geometry_msgs::Quaternion q2)
 {
-  // This function multiplies two quaternions.
+  // This function multiplies two quaternions, to assist in transform calculation.
   geometry_msgs::Quaternion q3;
   q3.w = (q1.w*q2.w - q1.x*q2.x - q1.y*q2.y - q1.z*q2.z);
   q3.x = (q1.w*q2.x + q1.x*q2.w + q1.y*q2.z - q1.z*q2.y);

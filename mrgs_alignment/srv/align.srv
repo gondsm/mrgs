@@ -7,3 +7,5 @@ geometry_msgs/TransformStamped transform1      # Standard ROS transformation fro
 geometry_msgs/TransformStamped transform2      # " from map2 to the merged map
 float32 success_coefficient                    # An estimate of how well the alignment went. 
                                                # This should lie between 0 and 1. A value of -1 indicates an error.
+                                               # Please note that the preferred way of indicating an error is by returning
+                                               # false on the service callback.

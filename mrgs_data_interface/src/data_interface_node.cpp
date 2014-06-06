@@ -47,16 +47,8 @@
  * 
  * Methodology:
  * This node maintains a multitude of global variables that, together, represent the current state of the operation, as
- * seen by the local robot.
- * -> g_latest_local_map: The latest map published in /map.
- * -> g_peer_macs: A list of robots we have already encountered.
- * -> g_foreign_map_vector: A vector of foreign maps, for publishing in the local network.
- * -> g_my_comm: WiFiComm object, responsible for facilitating communication.
- * -> g_n: ROS node handle, must be global to make subscription of topics in callbacks possible.
- * -> g_subs: Vector of subscriptions.
- * -> g_listener: Must be global so that we have the correct transform already in memory when we receive a local map.
- * These variables are only written to on very very well determined moments, to prevent race conditions and other data-
- * -related issues.
+ * seen by the local robot. These variables are only written to on very very well determined moments, to prevent race 
+ * conditions and other data-related issues.
  * I'm sure that with sufficient time, a few of these could be converted into local variables of some sort. However, in
  * order to complete this project in time, I have opted to combine this approach with programming discipline to ensure
  * there are no issues with using these variables. To any possible future maintaineres, austerity is advised in modify-
@@ -67,7 +59,8 @@
  * -> ForeignMapVector: A vector with a foreign map for each robot we know.
  * -> NetworkMap: The datatype that flows across the network. Contains a compressed map that is decompressed into a 
  * foreign map, as well as a map to base_link transform.
- * -> LatestRobotPose: A Pose including the robot's ID, for transmission into the internal network.
+ * -> LatestRobotPose: A Pose including the robot's ID, carried by a NetworkMap from a foreign robot, for transmission 
+ * into the internal network.
  */
 
 /// ROS includes
@@ -109,7 +102,8 @@ wifi_comm::WiFiComm* g_my_comm;
 std::vector<ros::Subscriber> g_subs;
 // To indicate whether or not we have a map from the local robot
 bool g_local_map_exists = false;
-// To indicate whether or not we are operating in centralized mode, and if we're a central or a transmitter node
+// To indicate whether or not we are operating in centralized mode, and if we're a central or a transmitter node.
+// The values of these are determined by getting parameters from ROS.
 bool g_centralized_mode = false;
 bool g_transmitter_mode = false;
 

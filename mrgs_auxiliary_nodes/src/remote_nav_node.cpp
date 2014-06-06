@@ -39,13 +39,12 @@
  * remote_nav_node
  * 
  * Summary:
- * This node ensures that TFs and poses are published into the internal network at the correct times.
+ * This node ensures that TFs and poses are published into the internal network at the correct rates and without delay.
  * 
  * Methodology:
  * This node is responsible for publishing the following data:
  * -> complete_map to local map (from each robot) TFs;
  * -> local map (from each robot) to local odom TFs;
- * -> remote poses.
  * This information is published repeatedly at (desireably) 10Hz, even if no new info is received, and is meant to
  * facilitate the visualization of the mission's progress. The relatively high rate of transmission is meant
  * to keep the TF tree alive with the latest information gathered in order to ensure the robot is always capable of

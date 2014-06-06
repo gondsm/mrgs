@@ -54,27 +54,39 @@
 #include "nav_msgs/OccupancyGrid.h"
 #include <cstdlib>
 
-// Global variables
-// So we can publish from inside the callback
-ros::Publisher g_map_publisher;
-// Last map we've received
-nav_msgs::OccupancyGrid g_last_map;
-// Is this the first map we've ever received?
-bool g_first_map = true;
+class MapDam{
+  public:
+  // Callback for /map
+  void processUnfilteredMap(const nav_msgs::OccupancyGrid::ConstPtr& unfiltered_map)
+  {
+    g_last_map = *unfiltered_map;
+    g_map_publisher.publish(unfiltered_map);
+  }
+  
+  MapDam(ros::NodeHandle* n_p)
+  {
+    g_first_map = true;
+    g_map_publisher = n_p->advertise<nav_msgs::OccupancyGrid>("mrgs/local_map", 2);
+  }
+  
+  private:
+  // Map Publisher
+  nav_msgs::OccupancyGrid g_last_map;
+  // Is this the first map we've ever received?
+  bool g_first_map;
+  // Map publisher
+  ros::Publisher g_map_publisher;
+};
 
-void processUnfilteredMap(const nav_msgs::OccupancyGrid::ConstPtr& unfiltered_map)
-{
-  g_last_map = *unfiltered_map;
-  g_map_publisher.publish(unfiltered_map);
-}
 
 int main(int argc, char **argv)
 {
   // ROS initialization
   ros::init(argc, argv, "remote_map_node");
   ros::NodeHandle n;
-  ros::Subscriber sub1 = n.subscribe("map", 2, processUnfilteredMap);
-  g_map_publisher = n.advertise<nav_msgs::OccupancyGrid>("mrgs/local_map", 2);
+  MapDam dam(&n);
+  ros::Subscriber sub1 = n.subscribe("map", 2, &MapDam::processUnfilteredMap, &dam);
+  
   // ROS loop
   ros::spin();
 

@@ -14,6 +14,7 @@
   <depend package="mrgs_alignment"/>
   <depend package="mrgs_data_interface"/>
   <depend package="mrgs_complete_map"/>
+  <depend package="mrgs_auxiliary_nodes"/>
 
 </package>
 

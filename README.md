@@ -18,7 +18,17 @@ To achieve our goal, this system runs on top of any existing SLAM system that co
 3. The system itself depends on a few other things, which are detailed on the setup script (mrgs_scripts/scripts/setup.sh), which brings us to...
 
 ### Setup
-Setting up the system is as simple as running the setup.sh bash script that exists in the scripts folder of the mrgs_scripts package. Please do not do this blindly! The script has instructions on the top, read them carefully. This script downloads and installs everything you should need in order to run this on top of your pre-existing SLAM solution.
+Setting up the system is as simple as running the setup.sh bash script that exists in the scripts folder of the mrgs_scripts package. Please do not do this blindly! The script has instructions on the top, read them carefully. This script downloads and installs everything you should need in order to run this on top of your pre-existing SLAM solution. Running the script is usually accomplished by:
+
+    $roscd mrgs_scripts/scripts
+    $./setup.sh
+    
+or, alternatively, if you want to see the script (which you should):
+
+    $roscd mrgs_scripts/scripts
+    $nano setup.sh
+    
+Again, do no do this blindly, take a look at the script before executing it. In this folder you will find other useful goodies, like the ip_setup python script, and a script that takes your system from freshly installed to having a working ROS Fuerte system.
 
 ### Running the system
 The system can run in one of two different modes: centralized and distributed. The distributed mode runs the full mrgs system on every robot, and the centralized mode relies on a non-mapping computer to receive the maps and do all the heavy processing.

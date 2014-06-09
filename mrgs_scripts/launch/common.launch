@@ -10,7 +10,6 @@
   <!-- Arguments -->
   <arg name="interface" default="eth0" />
   <arg name="is_centralized" default="false" />
-  <!--arg name="is_transmitter" default="false" /-->
   <arg name="launch_rviz" default="false" />
 
   <!-- Parameters -->

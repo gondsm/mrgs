@@ -388,6 +388,5 @@ int main(int argc, char **argv)
   // Regular execution:
   ros::spin();
   
-
   return 0;
 }

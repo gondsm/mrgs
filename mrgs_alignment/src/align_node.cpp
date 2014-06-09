@@ -353,10 +353,10 @@ int main(int argc, char **argv)
     if(g_n_hypothesis < 4)
       g_n_hypothesis = 4;
     ROS_INFO("Getting a hypothesis took %f seconds. Setting the number of hypotheses to %d.", calibration_time.toSec(), g_n_hypothesis);
+      // Free memory
+    a.resize_map(1,1);
+    b.resize_map(1,1);
   }
-  // Free memory
-  a.resize_map(1,1);
-  b.resize_map(1,1);
 
   /// Spin
   ros::spin();

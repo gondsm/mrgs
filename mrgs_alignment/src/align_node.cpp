@@ -350,6 +350,8 @@ int main(int argc, char **argv)
     std::vector<mapmerge::transformation> hyp = mapmerge::get_hypothesis(a,b,1,1,false);
     ros::Duration calibration_time = (ros::Time::now()-calibration_init);
     g_n_hypothesis = ceil(10/calibration_time.toSec());
+    if(g_n_hypothesis < 4)
+      g_n_hypothesis = 4;
     ROS_INFO("Getting a hypothesis took %f seconds. Setting the number of hypotheses to %d.", calibration_time.toSec(), g_n_hypothesis);
   }
   // Free memory

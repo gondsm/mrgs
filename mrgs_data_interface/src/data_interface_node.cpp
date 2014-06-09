@@ -221,7 +221,7 @@ void newRobotInNetwork(char * ip)
   ROS_INFO("Connecting to new peer at %s.", ip);
 
   // Send
-  // We only need to send maps if we're transmitters of if we're on distributed mode
+  // We only need to send maps if we're transmitters or if we're on distributed mode
   if(g_transmitter_mode || g_centralized_mode)
     g_my_comm->openForeignRelay(ip, "/mrgs/external_map", true);
 
@@ -297,14 +297,6 @@ void processMap(const nav_msgs::OccupancyGrid::ConstPtr& map)
 
 int main(int argc, char **argv)
 {
-  // Argument parsing
-  /*if(argc < 2)
-  {
-    ROS_FATAL("I need the interface you want me to work with (must be the same olsrd is using)!");
-    ROS_INFO("Usage: rosrun <package> <node> <interface>");
-    return -1;
-  }*/
-
   // ROS init
   ros::init(argc, argv, "data_interface_node");
   g_n = new ros::NodeHandle;
@@ -333,10 +325,12 @@ int main(int argc, char **argv)
     else
       ROS_INFO("Parameters received. Entering centralized mode. This is a center node.");
   
-  // Determine the interface we'll be using
-  std::string interface;
-  if(!g_centralized_mode)
+  // Determine the interface we'll be using and its MAC
+  // We only need an interface in distributed or transmitter modes
+  if(!g_centralized_mode || g_transmitter_mode)
   {
+    // Get interface parameter
+    std::string interface;
     if(!g_n->getParam("interface", interface))
     {
       ROS_FATAL("Could not get a parameter indicating the interface we'll be using!");
@@ -346,23 +340,7 @@ int main(int argc, char **argv)
     {
       ROS_INFO("Parameter received. Using interface %s.", interface.c_str());
     }
-  }
-  
-  // wifi_comm init
-  boost::function<void (char *)> new_robot_callback;
-  new_robot_callback = newRobotInNetwork;
-  g_my_comm = new wifi_comm::WiFiComm(new_robot_callback);
-  g_external_map = new ros::Publisher;
-  *g_external_map = g_n->advertise<mrgs_data_interface::NetworkMap>("/mrgs/external_map", 10);
-  g_foreign_map_vector_publisher = g_n->advertise<mrgs_data_interface::ForeignMapVector>("mrgs/foreign_maps", 10);
-  g_latest_pose = g_n->advertise<mrgs_data_interface::LatestRobotPose>("mrgs/remote_poses", 10);
-  g_since_last_pose = ros::Time::now();
-  
-  // tf init
-  g_listener = new tf::TransformListener;
-  
-  if(!g_centralized_mode || g_transmitter_mode)
-  {
+    
     // Retrieve local MAC address
     std::string* mac_file_path = new std::string(std::string("/sys/class/net/") + 
                                                  interface + 
@@ -390,6 +368,19 @@ int main(int argc, char **argv)
     emptyMap.robot_id = 0;
     g_foreign_map_vector.push_back(emptyMap);
   }
+  
+  // wifi_comm init
+  boost::function<void (char *)> new_robot_callback;
+  new_robot_callback = newRobotInNetwork;
+  g_my_comm = new wifi_comm::WiFiComm(new_robot_callback);
+  g_external_map = new ros::Publisher;
+  *g_external_map = g_n->advertise<mrgs_data_interface::NetworkMap>("/mrgs/external_map", 10);
+  g_foreign_map_vector_publisher = g_n->advertise<mrgs_data_interface::ForeignMapVector>("mrgs/foreign_maps", 10);
+  g_latest_pose = g_n->advertise<mrgs_data_interface::LatestRobotPose>("mrgs/remote_poses", 10);
+  g_since_last_pose = ros::Time::now();
+  
+  // tf init
+  g_listener = new tf::TransformListener;
   
   // Declare callbacks
   ros::Subscriber map = g_n->subscribe<nav_msgs::OccupancyGrid>("mrgs/local_map", 1, processMap);

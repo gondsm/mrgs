@@ -6,9 +6,8 @@
 -->
 
 <launch>
-  <arg name="interface" default="wlan0"/>
   <include file="$(find mrgs_scripts)/launch/common.launch">
-    <arg name="interface" value="$(arg interface)"/>
+    <arg name="interface" value="none"/>
     <arg name="is_centralized" value="true"/>
     <arg name="launch_rviz" value="false"/>
   </include>

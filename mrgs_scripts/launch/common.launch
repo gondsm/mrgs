@@ -1,5 +1,6 @@
 <!--
-  This file takes care of launching the whole system.
+  This file takes care of launching the whole system. This is not supposed to be called directly, unless you know what
+  you're doing.
   Arguments are:
     interface: the network interface the system will use to communicate;
     is_centralized: a boolean indicating whether or not the system will be operating in centralized mode. This is mainly

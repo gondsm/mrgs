@@ -333,14 +333,17 @@ int main(int argc, char **argv)
   
   // Determine the interface we'll be using
   std::string interface;
-  if(!g_n->getParam("interface", interface))
+  if(!g_centralized_mode)
   {
-    ROS_FATAL("Could not get a parameter indicating the interface we'll be using!");
-    return -1;
-  }
-  else
-  {
-    ROS_INFO("Parameter received. Using interface %s.", interface.c_str());
+    if(!g_n->getParam("interface", interface))
+    {
+      ROS_FATAL("Could not get a parameter indicating the interface we'll be using!");
+      return -1;
+    }
+    else
+    {
+      ROS_INFO("Parameter received. Using interface %s.", interface.c_str());
+    }
   }
   
   // wifi_comm init

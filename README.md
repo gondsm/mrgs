@@ -1,4 +1,5 @@
-#mrgs
+mrgs
+===
 A general communication framework for Multi-Robot SLAM based on Occupancy Grid merging.  
 This work was developed by Gonçalo Martins in the context of his MSc work.
 
@@ -23,3 +24,20 @@ Setting up the system is as simple as running the setup.sh bash script that exis
 The system can run in one of two different modes: centralized and distributed. The distributed mode runs the full mrgs system on every robot, and the centralized mode relies on a non-mapping computer to receive the maps and do all the heavy processing.
 
 The launching of the system is taken care of by using the provided launch files.
+
+#### Distributed (normal) mode:
+
+    $roslaunch mrgs_scripts distributed_node.launch interface:=wlan0
+    
+Interface is usually wlan0, eth0 or something similar, substitute wlan0 with whatever interface OLSRd is using.
+
+#### Centralized mode:
+On the central machine:
+
+    $roslaunch mrgs_scripts central_node.launch
+    
+On the remaining machines:
+
+    $roslaunch mrgs_scripts transmitter_node.launch interface:=wlan0
+    
+Same rules as before for the interface argument.

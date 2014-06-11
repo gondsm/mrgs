@@ -84,6 +84,7 @@
 // Number of hypothesis we calculate. The bigger this number, the better our chance to find the right transformation, 
 // and the more CPU we need.
 int g_n_hypothesis;
+int n = 0;
 
 bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response &res)
 {
@@ -214,6 +215,10 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
   /// Call mapmerge to determine the transformation
   ROS_DEBUG("Calculating hypotheses.");
   std::vector<mapmerge::transformation> hyp = mapmerge::get_hypothesis(temp_a,temp_b, g_n_hypothesis,1,false);
+  for(int i = 0; i < g_n_hypothesis; i++)
+    //ROS_INFO("Rotacao: %d, w = %f.", hyp[i].rotation, hyp[i].ai);
+    ROS_INFO("Hypothesis %d: ai=%f x=%d y=%d theta=%d", i, hyp[i].ai, hyp[i].deltax, hyp[i].deltay, hyp[i].rotation);
+  
   
   /// Determine if padding is necessary so that we don't lose information in map transformations
   // If it is necessary, we must apply it before transforming the maps
@@ -226,7 +231,21 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
   mapmerge::grid_map c, d;
   float rotx, roty;
   mapmerge::rotate_map(c, temp_b, hyp[0].rotation, 127, rotx, roty);
+  
+  // DEBUG:
+  char buffer[50];
+  sprintf(buffer,"../results/a%d.png",n);
+  //mapmerge::save_map_to_file(temp_a, buffer);
+  sprintf(buffer,"../results/b%d.png",n);
+  //mapmerge::save_map_to_file(temp_b,buffer);
+  sprintf(buffer,"../results/c%d.png",n);
+  //mapmerge::save_map_to_file(c,buffer);
+  
   mapmerge::translate_map(d, c, hyp[0].deltax, hyp[0].deltay);
+  sprintf(buffer,"../results/d%d.png",n);
+  //mapmerge::save_map_to_file(d,buffer);
+  
+  c.resize_map(map_padded_r, map_padded_c);
   for(int i = 0; i < map_padded_r; i++)
   {
     for(int j = 0; j < map_padded_c; j++)
@@ -242,6 +261,10 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
       }
     }
   }
+  
+  sprintf(buffer,"../results/final%d.png",n);
+  //mapmerge::save_map_to_file(c, buffer);
+  
   res.merged_map.data.resize(map_padded_r*map_padded_c);
   res.merged_map.info.resolution = req.map1.info.resolution;
   res.merged_map.header.frame_id = "complete_map";
@@ -325,6 +348,8 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
   // Final report
   ROS_INFO("Results sent. Total service time was %fs.", total_time);
   
+  n++;
+  
   /// If we got this far, everything is okay
   return true;
 }
@@ -338,7 +363,7 @@ int main(int argc, char **argv)
   
   /// Calibration
   mapmerge::grid_map a,b;
-  if(a.load_map(800,800,"../calibration/intel.txt")==1 || b.load_map(800,800,"../calibration/intel30.txt")==1)
+  if(a.load_map(800,800,"../calibration/intel.txt")==1 || b.load_map(800,800,"../calibration/intel90.txt")==1)
   {
     ROS_WARN("Calibration files could not be opened. Calibration will not be performed. First few executions may be slow.");
     g_n_hypothesis = 4;
@@ -348,12 +373,13 @@ int main(int argc, char **argv)
     ROS_INFO("Starting alignment node calibration.");
     ros::Time calibration_init = ros::Time::now();
     std::vector<mapmerge::transformation> hyp = mapmerge::get_hypothesis(a,b,1,1,false);
+    ROS_INFO("Calibration hypothesis: ai=%f x=%d y=%d theta=%d", hyp[0].ai, hyp[0].deltax, hyp[0].deltay, hyp[0].rotation);
     ros::Duration calibration_time = (ros::Time::now()-calibration_init);
     g_n_hypothesis = ceil(10/calibration_time.toSec());
     if(g_n_hypothesis < 4)
       g_n_hypothesis = 4;
     ROS_INFO("Getting a hypothesis took %f seconds. Setting the number of hypotheses to %d.", calibration_time.toSec(), g_n_hypothesis);
-      // Free memory
+    // Free memory
     a.resize_map(1,1);
     b.resize_map(1,1);
   }

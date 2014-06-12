@@ -37,15 +37,13 @@ include($ENV{ROS_ROOT}/core/rosbuild/FindPkgConfig.cmake)
 pkg_check_modules(OPENCV REQUIRED opencv)
 include_directories(${OPENCV_INCLUDE_DIRS})
 link_directories(${OPENCV_LIBRARY_DIRS})
-#target_link_libraries(map_server ${GDKPIXBUF_LIBRARIES})
 
-
-
+# Targets
 rosbuild_add_library(mapmerge src/mapmerge/common.cpp src/mapmerge/grid_map.cpp src/mapmerge/hough.cpp src/mapmerge/io.cpp src/mapmerge/manipulatemap.cpp)
-#rosbuild_add_executable(align src/align.cpp)
+target_link_libraries(mapmerge ${OPENCV_LIBRARIES})
 rosbuild_add_executable(align_node src/align_node.cpp)
 rosbuild_add_executable(align_test src/align_test.cpp)
-#target_link_libraries(align mapmerge)
 target_link_libraries(align_node mapmerge)
 target_link_libraries(align_test mapmerge)
-#target_link_libraries(mapmerge ${OPENCV_LIBRARIES})
+target_link_libraries(align_node ${OPENCV_LIBRARIES})
+target_link_libraries(align_test ${OPENCV_LIBRARIES})

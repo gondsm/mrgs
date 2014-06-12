@@ -378,7 +378,7 @@ int main(int argc, char **argv)
     g_n_hypothesis = ceil(10/calibration_time.toSec());
     if(g_n_hypothesis < 4)
       g_n_hypothesis = 4;
-    ROS_INFO("Getting a hypothesis took %f seconds. Setting the number of hypotheses to %d.", calibration_time.toSec(), g_n_hypothesis);
+    ROS_INFO("Getting a hypothesis took %fs. Setting the number of hypotheses to %d.", calibration_time.toSec(), g_n_hypothesis);
     // Free memory
     a.resize_map(1,1);
     b.resize_map(1,1);

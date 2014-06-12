@@ -215,9 +215,10 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
   /// Call mapmerge to determine the transformation
   ROS_DEBUG("Calculating hypotheses.");
   std::vector<mapmerge::transformation> hyp = mapmerge::get_hypothesis(temp_a,temp_b, g_n_hypothesis,1,false);
+  
+  // Show all hypotheses found
   for(int i = 0; i < g_n_hypothesis; i++)
-    //ROS_INFO("Rotacao: %d, w = %f.", hyp[i].rotation, hyp[i].ai);
-    ROS_INFO("Hypothesis %d: ai=%f x=%d y=%d theta=%d", i, hyp[i].ai, hyp[i].deltax, hyp[i].deltay, hyp[i].rotation);
+    ROS_DEBUG("Hypothesis %d: ai=%f x=%d y=%d theta=%d", i, hyp[i].ai, hyp[i].deltax, hyp[i].deltay, hyp[i].rotation);
   
   
   /// Determine if padding is necessary so that we don't lose information in map transformations
@@ -232,18 +233,21 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
   float rotx, roty;
   mapmerge::rotate_map(c, temp_b, hyp[0].rotation, 127, rotx, roty);
   
-  // DEBUG:
-  char buffer[50];
+  // DEBUG: Write first maps to disk
+  /*char buffer[50];
   sprintf(buffer,"../results/a%d.png",n);
-  //mapmerge::save_map_to_file(temp_a, buffer);
+  mapmerge::save_map_to_file(temp_a, buffer);
   sprintf(buffer,"../results/b%d.png",n);
-  //mapmerge::save_map_to_file(temp_b,buffer);
+  mapmerge::save_map_to_file(temp_b,buffer);
   sprintf(buffer,"../results/c%d.png",n);
-  //mapmerge::save_map_to_file(c,buffer);
+  mapmerge::save_map_to_file(c,buffer);*/
   
+  // Translate map
   mapmerge::translate_map(d, c, hyp[0].deltax, hyp[0].deltay);
-  sprintf(buffer,"../results/d%d.png",n);
-  //mapmerge::save_map_to_file(d,buffer);
+  
+  // DEBUG: Write translated map to disk
+  /*sprintf(buffer,"../results/d%d.png",n);
+  mapmerge::save_map_to_file(d,buffer);*/
   
   c.resize_map(map_padded_r, map_padded_c);
   for(int i = 0; i < map_padded_r; i++)
@@ -262,8 +266,9 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
     }
   }
   
-  sprintf(buffer,"../results/final%d.png",n);
-  //mapmerge::save_map_to_file(c, buffer);
+  // DEBUG: Write final map to disk
+  /*sprintf(buffer,"../results/final%d.png",n);
+  mapmerge::save_map_to_file(c, buffer);*/
   
   res.merged_map.data.resize(map_padded_r*map_padded_c);
   res.merged_map.info.resolution = req.map1.info.resolution;

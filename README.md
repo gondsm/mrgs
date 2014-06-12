@@ -15,7 +15,8 @@ To achieve our goal, this system runs on top of any existing SLAM system that co
 ### Requirements
 1. This system runs on top of ROS Fuerte, which requires that the machine you use is running Linux, preferrably Ubuntu 12.04. Other flavours of Ubuntu may or may not work with ROS.
 2. You must already have a working SLAM system, since this system does not include a SLAM solution. A commonly used SLAM package is [GMapping](http://wiki.ros.org/gmapping).
-3. The system itself depends on a few other things, which are detailed on the setup script (mrgs_scripts/scripts/setup.sh), which brings us to...
+3. The map merging technique used in this system requires OpenCV. I recommend [this script](https://github.com/jayrambhia/Install-OpenCV), as described [here](https://help.ubuntu.com/community/OpenCV), to install OpenCV. All you need to do is run the dependencies.sh script followed by the opencv_latest.sh script, both contained in the Ubuntu folder.
+4. The system itself depends on a few other things, which are detailed on the setup script (mrgs_scripts/scripts/setup.sh), which brings us to...
 
 ### Setup
 Setting up the system is as simple as running the setup.sh bash script that exists in the scripts folder of the mrgs_scripts package. Please do not do this blindly! The script has instructions on the top, read them carefully. This script downloads and installs everything you should need in order to run this on top of your pre-existing SLAM solution. Running the script is usually accomplished by:

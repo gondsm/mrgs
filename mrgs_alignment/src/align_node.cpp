@@ -147,13 +147,15 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
   }
   
   // Now we add rotational padding (so that we don't lose info in map rotation)
-  int maximum_distance = ceil(sqrt((pow(map_final_r/2.0,2))+(pow(map_final_c/2.0,2))));
+  /*int maximum_distance = ceil(sqrt((pow(map_final_r/2.0,2))+(pow(map_final_c/2.0,2))));
   int padding_rows = maximum_distance - ceil(map_final_r/2.0);
   int padding_cols = maximum_distance - ceil(map_final_c/2.0);
   if(padding_rows < 0) padding_rows = 0;
   if(padding_cols < 0) padding_cols = 0;
   map_final_r += 2*padding_rows;
-  map_final_c += 2*padding_cols;
+  map_final_c += 2*padding_cols;*/
+  int padding_rows = 0;
+  int padding_cols = 0;
   
   // Transfer grid info into datatypes mapmerge can interpret
   // We'll assume values are either -1 for unknown, 100 for occupied and 0 for free.
@@ -232,7 +234,6 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
 
   /// Second step: calculate and apply transformation
   // Get results (we only want one hypothesis, but we have to calculate several, or the results become invalid)
-  int n_hypothesis = 4;
   ROS_DEBUG("Calculating hypotheses.");
   std::vector<mapmerge::transformation> hyp = mapmerge::get_hypothesis(a,b,g_n_hypothesis,1,false);
   //ROS_DEBUG("Best result: %f %d %d %d", hyp[0].ai, hyp[0].deltax, hyp[0].deltay, hyp[0].rotation);

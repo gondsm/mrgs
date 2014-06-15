@@ -1,0 +1,1 @@
+This bagfile contains the /foreign_maps topic created during an exploration of the ISR northern corridors.

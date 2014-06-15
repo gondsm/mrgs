@@ -88,15 +88,15 @@ int n = 0;
 
 bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response &res)
 {
+  /// Start counting time
+  // This is so we can report how long it took to complete the alignment, and adjust the number of hypotheses.
   ros::Time init = ros::Time::now();
   ROS_INFO("Received an alignment request. Alignment initiated.");
   ROS_DEBUG("Dimensions (h x w): %dx%d and %dx%d.", req.map1.info.height, req.map1.info.width,
                                                    req.map2.info.height, req.map2.info.width);
-                                                   
-  /// First step: padding and copying into mapmerge datatypes
-  // Padding prevents us from losing parts of the map when rotating and translating the maps.
-  // We add padding by adding to the final dimension of the map before copying them into mapmerge datatypes.
-  // Determine if we need to add any padding
+  
+  /// Calculate dimensioning padding
+  // This ensures that both maps get input into mapmerge with the same dimensions
   int map_final_r = 0, map_final_c = 0;
   if(req.map1.info.height == req.map2.info.height && req.map1.info.width == req.map2.info.width)
   {
@@ -146,7 +146,10 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
     }
   }
   
-  // Now we add rotational padding (so that we don't lose info in map rotation)
+  // Now we add rotational padding
+  // Padding prevents us from losing parts of the map when rotating and translating the maps.
+  // We add padding by adding to the final dimension of the map before copying them into mapmerge datatypes.
+  // Determine if we need to add any padding
   /*int maximum_distance = ceil(sqrt((pow(map_final_r/2.0,2))+(pow(map_final_c/2.0,2))));
   int padding_rows = maximum_distance - ceil(map_final_r/2.0);
   int padding_cols = maximum_distance - ceil(map_final_c/2.0);
@@ -157,8 +160,10 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
   int padding_rows = 0;
   int padding_cols = 0;
   
+  /// Copy maps into mapmerge datatypes
   // Transfer grid info into datatypes mapmerge can interpret
-  // We'll assume values are either -1 for unknown, 100 for occupied and 0 for free.
+  // We'll assume values are either -1 for unknown, > MRGS_HIGH_PROB_THRESH for occupied, and < MRGS_LOW_PROB_THRES for
+  // free. Check beginning of code.
   // Different values will be classified as unknown.
   ROS_DEBUG("Final dimensions: rows=%d, cols=%d. Copying into mapmerge data.", map_final_r, map_final_c);
   mapmerge::grid_map temp_a(map_final_r, map_final_c),temp_b(map_final_r, map_final_c);
@@ -232,26 +237,40 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
   mapmerge::translate_map(a, temp_a, -padding_rows, -padding_cols);
   mapmerge::translate_map(b, temp_b, -padding_rows, -padding_cols);
 
-  /// Second step: calculate and apply transformation
-  // Get results (we only want one hypothesis, but we have to calculate several, or the results become invalid)
+  /// Call mapmerge to determine the transformation
   ROS_DEBUG("Calculating hypotheses.");
   std::vector<mapmerge::transformation> hyp = mapmerge::get_hypothesis(a,b,g_n_hypothesis,1,false);
-  //ROS_DEBUG("Best result: %f %d %d %d", hyp[0].ai, hyp[0].deltax, hyp[0].deltay, hyp[0].rotation);
+
+  // Show all hypotheses found
+  for(int i = 0; i < g_n_hypothesis; i++)
+    ROS_DEBUG("Hypothesis %d: ai=%f x=%d y=%d theta=%d", i, hyp[i].ai, hyp[i].deltax, hyp[i].deltay, hyp[i].rotation);
   
-  // Rototranslate map (missing: determine if translation will lose info and act accordingly)
+  /// Determine if padding is necessary so that we don't lose information in map transformations
+  // If it is necessary, we must apply it before transforming the maps
+  padding_cols = 0;
+  padding_rows = 0;
+  
+  /// Merge maps and pack into response
+  // c will contain the rotated map, d will contain the roto-translated map
   ROS_DEBUG("Applying transformation and merging.");
   mapmerge::grid_map c, d;
   float rotx, roty;
   mapmerge::rotate_map(c, b, hyp[0].rotation, 127, rotx, roty);
+  // DEBUG: Write first maps to disk
+  /*char buffer[50];
+  sprintf(buffer,"../results/a%d.png",n);
+  mapmerge::save_map_to_file(a, buffer);
+  sprintf(buffer,"../results/b%d.png",n);
+  mapmerge::save_map_to_file(b,buffer);
+  sprintf(buffer,"../results/c%d.png",n);
+  mapmerge::save_map_to_file(c,buffer);*/
   mapmerge::translate_map(d, c, hyp[0].deltax, hyp[0].deltay);
-  
-  /// Third step: merge maps and pack into response
-  // Merge map
-  // d contains the aligned map, c can contain the merged map.
-  // We assume a and d have equal dimensions (a and b should have been padded to avoid losses in rotation)
-  // At the same time, we'll determine the region of interest, in case we want to crop.
+  // DEBUG: Write translated map to disk
+  /*sprintf(buffer,"../results/d%d.png",n);
+  mapmerge::save_map_to_file(d,buffer);*/
   unsigned int roi_top_row = 0, roi_top_col = 0, roi_bottom_row = 0, roi_bottom_col = 0;
   bool in_roi = false, known_cell = false;
+  // Merge maps, this step also calculates the ROI
   for(int i = 0; i < map_final_r; i++)
   {
     for(int j = 0; j < map_final_c; j++)
@@ -288,6 +307,10 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
     }
   }
   
+  // DEBUG: Write final map to disk
+  /*sprintf(buffer,"../results/final%d.png",n);
+  mapmerge::save_map_to_file(c, buffer);*/
+  
   // Pack results into response message
   ROS_DEBUG("Packing results into response.");
   res.merged_map.data.resize(map_final_r*map_final_c);
@@ -320,7 +343,7 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
   }
   res.success_coefficient = hyp[0].ai;
   
-  /// Final step: calculate and pack transforms into response.
+  /// Calculate transformations
   ROS_DEBUG("Calculating and packing transforms.");
   // From map1 to merged_map
   res.transform1.transform.rotation.x = 0;
@@ -349,7 +372,6 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
   // Rotational translation (these equations should be explained somewhere)
   // Basically, since we are rotating from the center, we introduce an extra translation on the corner that is 
   // calculated through these equations.
-  // I'll reuse some variables, but their meanings will be different.
   float half_h = (map_final_r/2.0) * res.merged_map.info.resolution;
   float half_w = (map_final_c/2.0) * res.merged_map.info.resolution;
   theta = M_PI - atan(half_h/half_w);
@@ -379,283 +401,9 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
   }
   // Final report
   ROS_INFO("Results sent. Total service time was %fs.", total_time);
-  
   n++;
   
-  // Successfully return
-  return true;
-}
-
-bool align_new(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response &res)
-{
-  /// Start counting time
-  // This is so we can report how long it took to complete the alignment
-  ros::Time init = ros::Time::now();
-  ROS_INFO("Received an alignment request. Alignment initiated.");
-  ROS_DEBUG("Dimensions (h x w): %dx%d and %dx%d.", req.map1.info.height, req.map1.info.width,
-                                                   req.map2.info.height, req.map2.info.width);
-  /// Calculate dimensioning padding
-  // This ensures that both maps get input into mapmerge with the same dimensions
-  int map_padded_r = 0, map_padded_c = 0; // Final dimensions of the maps, with padding.
-  if(req.map1.info.height == req.map2.info.height && req.map1.info.width == req.map2.info.width)
-  {
-    ROS_DEBUG("Maps have equal dimensions, only need to apply rotational padding.");
-    map_padded_r = req.map1.info.height;
-    map_padded_c = req.map1.info.width;
-  }
-  else
-  {
-    ROS_DEBUG("Map dimensions are different. Padding is needed.");
-    // Determine which operations to apply
-    if(req.map1.info.height != req.map2.info.height)
-    {
-      // Different heights, need to pad
-      if(req.map1.info.height > req.map2.info.height)
-      {
-        // Add height to map2 until its height is the same as map1
-        map_padded_r = req.map1.info.height;
-      }
-      else
-      {
-        // Add height to map1 until its height is the same as map2
-        map_padded_r = req.map2.info.height;
-      }
-    }
-    else
-    {
-      map_padded_r = req.map1.info.height;
-    }
-    if(req.map1.info.width != req.map2.info.width)
-    {
-      // Different widths, need to pad
-      if(req.map1.info.width > req.map2.info.width)
-      {
-        // Add width to map2 until its width is the same as map1
-        map_padded_c = req.map1.info.width;
-      }
-      else
-      {
-        // Add width to map1 until its width is the same as map2
-        map_padded_c = req.map2.info.width;
-      }
-    }
-    else
-    {
-      map_padded_c = req.map1.info.width;
-    }
-  }
-  
-  /// Copy maps into mapmerge datatypes and calculate ROI
-  // This step is a bit of a time sink, so I've tried to make it as efficient as possible
-  ROS_DEBUG("Final dimensions: rows=%d, cols=%d. Copying into mapmerge data.", map_padded_r, map_padded_c);
-  mapmerge::grid_map temp_a(map_padded_r, map_padded_c),temp_b(map_padded_r, map_padded_c);
-  bool exists_occupied_1 = false, exists_occupied_2 = false;
-  int k = 0, k1 = 0, k2 = 0;  // Linear counters
-  for(int i = 0; i < map_padded_r; i++)
-  {
-    for(int j = 0; j < map_padded_c;j++)
-    {
-      // Determine which value to attribute to the current cell
-      // (and attribute it)
-      if(i < req.map1.info.height && j < req.map1.info.width)
-      {
-        // If (i,j) are inside the original dimensions
-        if(req.map1.data.at(k1) == -1)
-          temp_a.grid.at(i).at(j) = 127;
-        else if(req.map1.data.at(k1) < MRGS_LOW_PROB_THRESH)
-          temp_a.grid.at(i).at(j) = 255;
-        else if (req.map1.data.at(k1) > MRGS_HIGH_PROB_THRESH)
-          {
-            temp_a.grid.at(i).at(j) = 0;
-            if(!exists_occupied_1) exists_occupied_1 = true;
-          }
-          else
-            temp_a.grid.at(i).at(j) = 127;
-        // Increment linear counter
-        k1++;
-      }
-      else
-      {
-        // Insert an unknown cell
-        temp_a.grid.at(i).at(j) = 127;
-      }
-      
-      if(i < req.map2.info.height && j < req.map2.info.width)
-      {
-        // If (i,j) are inside the original dimensions
-        if(req.map2.data.at(k2) == -1)
-          temp_b.grid.at(i).at(j) = 127;
-        else if(req.map2.data.at(k2) < MRGS_LOW_PROB_THRESH)
-          temp_b.grid.at(i).at(j) = 255;
-        else if (req.map2.data.at(k2) > MRGS_HIGH_PROB_THRESH)
-          {
-            temp_b.grid.at(i).at(j) = 0;
-            if(!exists_occupied_2) exists_occupied_2 = true;
-          }
-          else
-            temp_b.grid.at(i).at(j) = 127;
-        
-        // Increment linear counter
-        k2++;
-      }
-      else
-      {
-        // Insert an unknown cell
-        temp_b.grid.at(i).at(j) = 127;
-      }
-      
-    }
-  }
-  // Break if there are no occupied cells
-  if(!exists_occupied_1 || !exists_occupied_2){
-    ROS_ERROR("At least one of the provided grids contain no occupied cells. Terminating.");
-    return false;
-  }
-  
-  /// Call mapmerge to determine the transformation
-  ROS_DEBUG("Calculating hypotheses.");
-  std::vector<mapmerge::transformation> hyp = mapmerge::get_hypothesis(temp_a,temp_b, g_n_hypothesis,1,false);
-  
-  // Show all hypotheses found
-  for(int i = 0; i < g_n_hypothesis; i++)
-    ROS_DEBUG("Hypothesis %d: ai=%f x=%d y=%d theta=%d", i, hyp[i].ai, hyp[i].deltax, hyp[i].deltay, hyp[i].rotation);
-  
-  
-  /// Determine if padding is necessary so that we don't lose information in map transformations
-  // If it is necessary, we must apply it before transforming the maps
-  int padding_cols = 0;
-  int padding_rows = 0;
-  
-  
-  /// Merge maps and pack into response
-  // c will contain the rotated map, d will contain the roto-translated map
-  mapmerge::grid_map c, d;
-  float rotx, roty;
-  mapmerge::rotate_map(c, temp_b, hyp[0].rotation, 127, rotx, roty);
-  
-  // DEBUG: Write first maps to disk
-  /*char buffer[50];
-  sprintf(buffer,"../results/a%d.png",n);
-  mapmerge::save_map_to_file(temp_a, buffer);
-  sprintf(buffer,"../results/b%d.png",n);
-  mapmerge::save_map_to_file(temp_b,buffer);
-  sprintf(buffer,"../results/c%d.png",n);
-  mapmerge::save_map_to_file(c,buffer);*/
-  
-  // Translate map
-  mapmerge::translate_map(d, c, hyp[0].deltax, hyp[0].deltay);
-  
-  // DEBUG: Write translated map to disk
-  /*sprintf(buffer,"../results/d%d.png",n);
-  mapmerge::save_map_to_file(d,buffer);*/
-  
-  c.resize_map(map_padded_r, map_padded_c);
-  for(int i = 0; i < map_padded_r; i++)
-  {
-    for(int j = 0; j < map_padded_c; j++)
-    {
-      c.grid.at(i).at(j) = 127;
-      if(temp_a.grid.at(i).at(j) == 255 || d.grid.at(i).at(j) == 255)
-      {
-        c.grid.at(i).at(j) = 255;
-      }
-      if(temp_a.grid.at(i).at(j) == 0 || d.grid.at(i).at(j) == 0) 
-      {
-        c.grid.at(i).at(j) = 0;
-      }
-    }
-  }
-  
-  // DEBUG: Write final map to disk
-  /*sprintf(buffer,"../results/final%d.png",n);
-  mapmerge::save_map_to_file(c, buffer);*/
-  
-  res.merged_map.data.resize(map_padded_r*map_padded_c);
-  res.merged_map.info.resolution = req.map1.info.resolution;
-  res.merged_map.header.frame_id = "complete_map";
-  res.merged_map.info.width = map_padded_c;
-  res.merged_map.info.height = map_padded_r;
-  k = 0;
-  for(int i = 0; i < c.get_rows(); i++)
-  {
-    for(int j = 0; j < c.get_cols();j++)
-    {
-      switch(c.grid.at(i).at(j))
-      {
-      case 0:
-        res.merged_map.data.at(k) = 100;
-        break;
-      case 127:
-        res.merged_map.data.at(k) = -1;
-        break;
-      case 255:
-        res.merged_map.data.at(k) = 0;
-        break;
-      default:
-        res.merged_map.data.at(k) = -1;
-        ROS_DEBUG("Found strange cell in map c at (%d,%d). Defaulting to unknown.", i, j);
-      }
-      k++;
-    }
-  }
-  
-  /// Calculate transformations
-  ROS_DEBUG("Calculating and packing transforms.");
-  // From map1 to merged_map
-  res.transform1.transform.rotation.x = 0;
-  res.transform1.transform.rotation.y = 0;
-  res.transform1.transform.rotation.z = 0;
-  res.transform1.transform.rotation.w = 1;
-  res.transform1.transform.translation.x = padding_cols * res.merged_map.info.resolution;
-  res.transform1.transform.translation.y = padding_rows * res.merged_map.info.resolution;
-  res.transform1.transform.translation.z = 0;
-  
-  // From map2 to merged_map
-  // Rotation
-  float deg_to_rad = 0.01745329251; // = pi/180, precalculated for performance.
-  float theta = deg_to_rad * -1 * hyp[0].rotation;
-  float sin_theta = sin(theta/2);
-  float cos_theta = cos(theta/2);
-  float quaternion_magnitude = sqrtf(pow(sin_theta, 2) + pow(cos_theta,2));
-  res.transform2.transform.rotation.x = 0;
-  res.transform2.transform.rotation.y = 0;
-  res.transform2.transform.rotation.z = cos_theta/quaternion_magnitude;
-  res.transform2.transform.rotation.w = sin_theta/quaternion_magnitude;
-  // Padding translation.
-  res.transform2.transform.translation.x = padding_cols * res.merged_map.info.resolution;
-  res.transform2.transform.translation.y = padding_rows * res.merged_map.info.resolution;
-  res.transform2.transform.translation.z = 0;
-  // Rotational translation (these equations should be explained somewhere)
-  // Basically, since we are rotating from the center, we introduce an extra translation on the corner that is 
-  // calculated through these equations.
-  float half_h = (map_padded_r/2.0) * res.merged_map.info.resolution;
-  float half_w = (map_padded_c/2.0) * res.merged_map.info.resolution;
-  theta = M_PI - atan(half_h/half_w);
-  float dist = sqrt(pow(half_h, 2) + pow(half_w, 2));
-  res.transform2.transform.translation.x += (dist*cosf(theta - (hyp[0].rotation*deg_to_rad))) - (dist*cosf(theta));
-  res.transform2.transform.translation.y += (dist*sinf(theta - (hyp[0].rotation*deg_to_rad))) - (dist*sinf(theta));
-  // Merging translation
-  res.transform2.transform.translation.x += hyp[0].deltax;
-  res.transform2.transform.translation.y += hyp[0].deltay;
-
-  /// Adjust the number of hypotheses to calculate next according to this performance
-  double total_time = (ros::Time::now()-init).toSec();
-  if(total_time > 5.0 && g_n_hypothesis > 4)
-  {
-    g_n_hypothesis/=2;
-    ROS_INFO("Merging took longer than 5 seconds. Cutting the number of hypotheses to %d.", g_n_hypothesis);
-  }
-  else if(total_time < 3.0)
-  {
-    g_n_hypothesis++;
-    ROS_INFO("Merging took less than 5 seconds. Incrementing the number of hypotheses to %d.", g_n_hypothesis);
-  }
-  // Final report
-  ROS_INFO("Results sent. Total service time was %fs.", total_time);
-  
-  n++;
-  
-  /// If we got this far, everything is okay
+  /// Successfully return
   return true;
 }
 

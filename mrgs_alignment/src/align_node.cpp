@@ -122,6 +122,10 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
         map_final_r = req.map2.info.height;
       }
     }
+    else
+    {
+      map_final_r = req.map1.info.height;
+    }
     if(req.map1.info.width != req.map2.info.width)
     {
       // Different widths, need to pad
@@ -135,6 +139,10 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
         // Add width to map1 until its width is the same as map2
         map_final_c = req.map2.info.width;
       }
+    }
+    else
+    {
+      map_final_c = req.map1.info.width;
     }
   }
   

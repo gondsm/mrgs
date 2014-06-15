@@ -298,7 +298,7 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
   {
     res.merged_map.data.resize(map_final_r*map_final_c);
     res.merged_map.info.resolution = req.map1.info.resolution;
-    res.merged_map.header.frame_id = "map";
+    res.merged_map.header.frame_id = "/complete_map";
     res.merged_map.info.width = map_final_c;
     res.merged_map.info.height = map_final_r;
     k = 0;
@@ -331,7 +331,7 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
     map_final_c = roi_bottom_col - roi_top_col+1;
     res.merged_map.data.resize(map_final_r*map_final_c);
     res.merged_map.info.resolution = req.map1.info.resolution;
-    res.merged_map.header.frame_id = "map";
+    res.merged_map.header.frame_id = "/complete_map";
     res.merged_map.info.width = map_final_c;
     res.merged_map.info.height = map_final_r;
     res.merged_map.info.map_load_time = ros::Time::now();

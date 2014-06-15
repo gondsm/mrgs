@@ -287,11 +287,6 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
     }
   }
   
-  // DEBUG: Write maps to disk for viewing
-  //mapmerge::save_map_to_file(a, "/home/vsantos/lol/in1.png");
-  //mapmerge::save_map_to_file(b, "/home/vsantos/lol/in2.png");
-  //mapmerge::save_map_to_file(c, "/home/vsantos/lol/out.png");
-  
   // Pack results into response message
   ROS_DEBUG("Packing results into response.");
   res.merged_map.data.resize(map_final_r*map_final_c);
@@ -371,10 +366,15 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
     g_n_hypothesis/=2;
     ROS_INFO("Merging took longer than 5 seconds. Cutting the number of hypotheses to %d.", g_n_hypothesis);
   }
-  else if(total_time < 3.0)
+  else if(total_time > 2.0)
+  {
+    g_n_hypothesis/=1.5;
+    ROS_INFO("Merging took longer than 3 seconds. Cutting the number of hypotheses to %d.", g_n_hypothesis);
+  }
+  else if(total_time < 2.0)
   {
     g_n_hypothesis++;
-    ROS_INFO("Merging took less than 5 seconds. Incrementing the number of hypotheses to %d.", g_n_hypothesis);
+    ROS_INFO("Merging took less than 2 seconds. Incrementing the number of hypotheses to %d.", g_n_hypothesis);
   }
   // Final report
   ROS_INFO("Results sent. Total service time was %fs.", total_time);

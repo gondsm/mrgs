@@ -234,7 +234,7 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
   // Get results (we only want one hypothesis, but we have to calculate several, or the results become invalid)
   int n_hypothesis = 4;
   ROS_DEBUG("Calculating hypotheses.");
-  std::vector<mapmerge::transformation> hyp = mapmerge::get_hypothesis(a,b,n_hypothesis,1,false);
+  std::vector<mapmerge::transformation> hyp = mapmerge::get_hypothesis(a,b,g_n_hypothesis,1,false);
   //ROS_DEBUG("Best result: %f %d %d %d", hyp[0].ai, hyp[0].deltax, hyp[0].deltay, hyp[0].rotation);
   
   // Rototranslate map (missing: determine if translation will lose info and act accordingly)
@@ -404,9 +404,22 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
   res.transform2.transform.translation.x += hyp[0].deltax;
   res.transform2.transform.translation.y += hyp[0].deltay;
   
-  
+  /// Adjust the number of hypotheses to calculate next according to this performance
+  double total_time = (ros::Time::now()-init).toSec();
+  if(total_time > 5.0 && g_n_hypothesis > 4)
+  {
+    g_n_hypothesis/=2;
+    ROS_INFO("Merging took longer than 5 seconds. Cutting the number of hypotheses to %d.", g_n_hypothesis);
+  }
+  else if(total_time < 3.0)
+  {
+    g_n_hypothesis++;
+    ROS_INFO("Merging took less than 5 seconds. Incrementing the number of hypotheses to %d.", g_n_hypothesis);
+  }
   // Final report
-  ROS_INFO("Results sent. Total service time was %fs.", (ros::Time::now()-init).toSec());
+  ROS_INFO("Results sent. Total service time was %fs.", total_time);
+  
+  n++;
   
   // Successfully return
   return true;

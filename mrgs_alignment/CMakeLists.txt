@@ -28,22 +28,13 @@ rosbuild_gensrv()
 #rosbuild_link_boost(${PROJECT_NAME} thread)
 #rosbuild_add_executable(example examples/example.cpp)
 #target_link_libraries(example ${PROJECT_NAME})
-
-# Find OpenCV, we'll need it.
-#find_package(OpenCV)
-#include_directories(${OpenCV_INCLUDE_DIRS})
-
-include($ENV{ROS_ROOT}/core/rosbuild/FindPkgConfig.cmake)
-pkg_check_modules(OPENCV REQUIRED opencv)
-include_directories(${OPENCV_INCLUDE_DIRS})
-link_directories(${OPENCV_LIBRARY_DIRS})
+find_package(OpenCV REQUIRED)
 
 # Targets
 rosbuild_add_library(mapmerge src/mapmerge/common.cpp src/mapmerge/grid_map.cpp src/mapmerge/hough.cpp src/mapmerge/io.cpp src/mapmerge/manipulatemap.cpp)
-target_link_libraries(mapmerge ${OPENCV_LIBRARIES})
+target_link_libraries(mapmerge ${OpenCV_LIBS})
 rosbuild_add_executable(align_node src/align_node.cpp)
 rosbuild_add_executable(align_test src/align_test.cpp)
 target_link_libraries(align_node mapmerge)
 target_link_libraries(align_test mapmerge)
-target_link_libraries(align_node ${OPENCV_LIBRARIES})
-target_link_libraries(align_test ${OPENCV_LIBRARIES})
+

@@ -64,14 +64,88 @@ class MapDam{
   {
     // Allocate a new publish-able map:
     mrgs_data_interface::LocalMap filtered_map;
+    filtered_map.filtered_map = *unfiltered_map;
+    
+    // Crop map to smallest rectangle
+    cropMap(filtered_map.filtered_map);
+    
+    // Get TF
+    if(listener->canTransform ("/base_link", "/map", ros::Time(0)))
+    {
+      tf::StampedTransform map_to_base_link;
+      listener->lookupTransform(std::string("/map"), std::string("/base_link"), ros::Time(0), map_to_base_link);
+      tf::transformStampedTFToMsg(map_to_base_link, filtered_map.map_to_base_link);
+    }
+    else
+    {
+      ROS_WARN("Could not find map to base_link TF, aborting.");
+      return;
+    }
+    
+    // Set this as the latest map
+    last_map = filtered_map;
+    published = false;
+  }
+  
+  void publishIfProper()
+  {
+    // This function decides if it's time to publish, and publishes if justified.
+    if(first_map)
+    {
+      first_map = false;
+      map_publisher.publish(last_map);
+      ROS_INFO("Inserted the first map into the system.");
+      published = true;
+      return;
+    }
+    if(!published)
+    {
+      map_publisher.publish(last_map);
+      ROS_INFO("Inserted a map into the system.");
+      published = true;
+    }
+  }
+  
+  // Constructor
+  // We need the node handle to initialize the publisher and subscriber
+  MapDam(ros::NodeHandle* n_p)
+  {
+    first_map = true;
+    published = false;
+    map_publisher = n_p->advertise<mrgs_data_interface::LocalMap>("mrgs/local_map", 2);
+    map_subscriber = n_p->subscribe("map", 2, &MapDam::processUnfilteredMap, this);
+    listener = new tf::TransformListener;
+  }
+  
+  ~MapDam()
+  {
+    delete listener;
+  }
+  
+  private:
+  // Current received map
+  mrgs_data_interface::LocalMap last_map;
+  // Has this map been published?
+  bool published;
+  // Is this the first map we've ever received?
+  bool first_map;
+  // Map publisher
+  ros::Publisher map_publisher;
+  // Map subscriber
+  ros::Subscriber map_subscriber;
+  // TF listener
+  tf::TransformListener *listener;
+  // Crops a map to the smallest rectangle
+  void cropMap(nav_msgs::OccupancyGrid &to_crop)
+  {
     // Determine map's region of interest, for cropping
     int top_line = -1, bottom_line = -1, left_column = -1, right_column = -1;
-    for(int i = 0; i < unfiltered_map->data.size(); i++)
+    for(int i = 0; i < to_crop.data.size(); i++)
     {
-      if(unfiltered_map->data.at(i) != -1)
+      if(to_crop.data.at(i) != -1)
       {
-        int line = i/unfiltered_map->info.width;
-        int col = i%unfiltered_map->info.width;
+        int line = i/to_crop.info.width;
+        int col = i%to_crop.info.width;
         if(top_line == -1)
           top_line = line;
         if(left_column == -1)
@@ -84,48 +158,9 @@ class MapDam{
           bottom_line = line;
       }
     }
-    ROS_INFO("Smallest rectangle found: (%d,%d) to (%d,%d). Original: (%dx%d).", top_line, left_column, bottom_line, right_column, unfiltered_map->info.height, unfiltered_map->info.width);
-    // Copy map into message and publish
-    filtered_map.filtered_map = *unfiltered_map;
-    if(listener->canTransform ("/base_link", "/map", ros::Time(0)))
-    {
-      tf::StampedTransform map_to_base_link;
-      listener->lookupTransform(std::string("/map"), std::string("/base_link"), ros::Time(0), map_to_base_link);
-      tf::transformStampedTFToMsg(map_to_base_link, filtered_map.map_to_base_link);
-    }
-    else
-    {
-    }
-    last_map = filtered_map;
-    //map_publisher.publish(filtered_map);
+    ROS_DEBUG("Smallest rectangle found: (%d,%d) to (%d,%d). Original: (%dx%d).", top_line, left_column, bottom_line, right_column, to_crop.info.height, to_crop.info.width);
   }
-  // Constructor
-  MapDam(ros::NodeHandle* n_p)
-  {
-    first_map = true;
-    map_publisher = n_p->advertise<mrgs_data_interface::LocalMap>("mrgs/local_map", 2);
-    map_subscriber = n_p->subscribe("map", 2, &MapDam::processUnfilteredMap, this);
-    listener = new tf::TransformListener;
-  }
-  
-  ~MapDam()
-  {
-    delete listener;
-  }
-  
-  private:
-  // Latest received map
-  mrgs_data_interface::LocalMap last_map;
-  // Is this the first map we've ever received?
-  bool first_map;
-  // Map publisher
-  ros::Publisher map_publisher;
-  // Map subscriber
-  ros::Subscriber map_subscriber;
-  // TF listener
-  tf::TransformListener *listener;
 };
-
 
 int main(int argc, char **argv)
 {
@@ -135,7 +170,13 @@ int main(int argc, char **argv)
   MapDam dam(&n);
   
   // ROS loop
-  ros::spin();
+  ros::Rate r(1);
+  while(ros::ok())
+  {
+    ros::spinOnce();
+    dam.publishIfProper();
+    r.sleep();
+  }
 
   // Never to be called
   return 0;

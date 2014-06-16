@@ -377,12 +377,14 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
   
   /// Adjust the number of hypotheses to calculate next according to this performance
   double total_time = (ros::Time::now()-init).toSec();
-  if(total_time > 5.0 && g_n_hypothesis > 4)
+  ROS_INFO("Total service time was %fs.", total_time);
+  n++;
+  if(total_time > 5.0 && g_n_hypothesis > 8)
   {
     g_n_hypothesis/=2;
     ROS_INFO("Merging took longer than 5 seconds. Cutting the number of hypotheses to %d.", g_n_hypothesis);
   }
-  else if(total_time > 2.0)
+  else if(total_time > 2.0 && g_n_hypothesis > 6)
   {
     g_n_hypothesis/=1.5;
     ROS_INFO("Merging took longer than 3 seconds. Cutting the number of hypotheses to %d.", g_n_hypothesis);
@@ -391,10 +393,7 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
   {
     g_n_hypothesis++;
     ROS_INFO("Merging took less than 2 seconds. Incrementing the number of hypotheses to %d.", g_n_hypothesis);
-  }
-  // Final report
-  ROS_INFO("Results sent. Total service time was %fs.", total_time);
-  n++;
+  }  
   
   /// Successfully return
   return true;

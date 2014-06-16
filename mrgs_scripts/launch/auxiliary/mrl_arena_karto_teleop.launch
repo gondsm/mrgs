@@ -1,0 +1,12 @@
+<launch>
+  <!-- Stage -->
+  <node name="stage" pkg="stage" type="stageros" args="$(find mrgs_scripts)/world/ArenaMRL/mrl_arena.world"/>
+  <!-- Karto -->
+  <node name="karto" pkg="karto" type="slam_karto">
+    <remap from="scan" to="base_scan"/>
+  </node>
+  <!-- Teleop -->
+  <node name="teleop" pkg="teleop_SLAM_stage" type="teleop_stage" />
+  <!-- Rviz -->
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find mrgs_scripts)/rviz/only_map.vcg" />
+</launch>

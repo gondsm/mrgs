@@ -1,0 +1,41 @@
+<!--
+  This file takes care of launching the whole system. This is not supposed to be called directly, unless you know what
+  you're doing.
+  Arguments are:
+    interface: the network interface the system will use to communicate;
+    is_centralized: a boolean indicating whether or not the system will be operating in centralized mode. This is mainly
+                    used by the data interface node to work out how to build the map vector.
+-->
+<launch>
+
+  <!-- Arguments -->
+  <arg name="interface"/>
+  <arg name="is_centralized"/>
+  <arg name="launch_rviz"/>
+
+  <!-- Parameters -->
+  <param name="is_centralized" value="$(arg is_centralized)" />
+  <param name="interface" value="$(arg interface)" />
+  <param name="is_transmitter" value="false" />
+  
+  <!-- mrgs -->
+  <!-- wifi_comm node -->
+  <node name="wifi_discovery_node" pkg="wifi_comm" type="wifi_discovery_node" />
+  <!-- mrgs_data_interface node-->
+  <node name="data_interface_node" pkg="mrgs_data_interface" type="data_interface_node" output="screen"/>
+  <!-- mrgs_complete_map node -->
+  <node name="complete_map_node" pkg="mrgs_complete_map" type="complete_map_node" output="screen"/>
+  <!-- mrgs_alignment node -->
+  <node name="align_node" pkg="mrgs_alignment" type="align_node" output="screen" cwd="node"/>
+  <!-- remote_nav node -->
+  <node name="remote_nav_node" pkg="mrgs_auxiliary_nodes" type="remote_nav_node" output="screen"/>  
+  <!-- dam node -->
+  <node name="map_dam_node" pkg="mrgs_auxiliary_nodes" type="map_dam_node" output="screen" unless="$(arg is_centralized)"/>
+  
+  <!-- Rviz -->
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find mrgs_scripts)/rviz/only_map.vcg" if="$(arg launch_rviz)" />
+
+  <!-- rqt_console -->
+  <!--node name="console" pkg="rqt_console" type="rqt_console"/-->
+  <!--node name="logger_level" pkg="rqt_logger_level" type="rqt_logger_level"/-->
+</launch>

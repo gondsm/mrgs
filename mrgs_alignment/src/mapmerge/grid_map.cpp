@@ -85,7 +85,6 @@ void grid_map::get_points(vector<point>& p) const {
   np = 0;
   for ( i = 0 ; i < rows ; i++ )
     np+=count(grid[i].begin(),grid[i].end(),occupied_cell); 
-    
   
   p.resize(np);
   pos = 0;

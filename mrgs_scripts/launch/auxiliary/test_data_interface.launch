@@ -1,0 +1,11 @@
+<launch>
+  <arg name="working_interface" default="wlan0" />
+  <!-- wifi_comm node -->
+  <node name="wifi_discovery_node" pkg="wifi_comm" type="wifi_discovery_node" />
+  <!-- mrgs_data_interface node-->
+  <node name="data_interface_node" pkg="mrgs_data_interface" type="data_interface_node" args="$(arg working_interface)" output="screen"/>
+  <!-- mrgs_complete_map node -->
+  <node name="complete_map_node" pkg="mrgs_complete_map" type="complete_map_node" output="screen"/>
+  <!-- mrgs_alignment node -->
+  <node name="align_node" pkg="mrgs_alignment" type="align_node" output="screen"/>
+</launch>

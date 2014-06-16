@@ -1,0 +1,14 @@
+<!--
+  This file takes care of launching the central node of the centralized system.
+  This launch file is meant to be coupled with the transmitter_node.launch file.
+  Arguments are:
+    interface: the network interface the system will use to communicate;
+-->
+
+<launch>
+  <include file="$(find mrgs_scripts)/launch/common.launch">
+    <arg name="interface" value="none"/>
+    <arg name="is_centralized" value="true"/>
+    <arg name="launch_rviz" value="false"/>
+  </include>
+</launch>

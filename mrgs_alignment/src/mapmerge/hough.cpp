@@ -54,12 +54,14 @@ const float EPSILON = 0.00001;
 
 // TESTED: OK
 unsigned int find_max_coordinate(const vector<point>& v) {
+
   unsigned int retval = max(v[0].r,v[0].c);
+
   vector<point>::const_iterator i;
   for( i =  v.begin(),  i++; i != v.end() ; i++ ) 
     retval = max((*i).c,(*i).r) > retval ? max((*i).c,(*i).r) : retval;
-  
-  return 0;
+
+  return retval;
 }
 
 /* float *costable,*sintable;

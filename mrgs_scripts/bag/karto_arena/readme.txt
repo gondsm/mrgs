@@ -1,0 +1,1 @@
+Data collected in the MRL arena using Karto as the SLAM technique, meant for two-robot experiments.

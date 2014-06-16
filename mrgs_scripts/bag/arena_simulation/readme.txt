@@ -1,0 +1,1 @@
+This bagfile contains the /foreign_maps topic from a mission run on a simulated arena.

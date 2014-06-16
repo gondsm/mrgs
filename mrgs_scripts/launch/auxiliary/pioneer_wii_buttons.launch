@@ -1,0 +1,14 @@
+<launch>
+
+ <!-- joy node -->
+   <node respawn="true" pkg="wiimote"  type="wiimote_node.py" name="pioneer_teleop" output="screen"/>
+
+ <!-- Axes -->
+  <param name="scale_linear" value="0.5" type="double"/>
+  <param name="scale_angular" value="1.5" type="double"/>
+
+  <node pkg="pioneer_teleop" type="pioneer_teleop_buttons" name="teleop">
+    <remap from="ROSARIA/cmd_vel" to="cmd_vel"/>
+  </node>
+  
+</launch>

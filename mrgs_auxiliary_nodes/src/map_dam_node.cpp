@@ -45,8 +45,8 @@
  * Methodology:
  * The node intercepts the /map topic and publishes a new topic, which the data interface subscribes to. Since the data
  * interface node is the entry point for maps in the system, this is enough to control the way maps enter the system.
- * Currently, we simply insert all the maps we receive into the system, acting as an over-complicated topic redirector.
- * However, the plans are to integrate intelligence into this node.
+ * This node receives raw maps from SLAM, and crops them, removing any excess padding, in order to facilitate the 
+ * trasmission and alignment of the map.
  */
 // ROS includes
 #include "ros/ros.h"
@@ -62,14 +62,29 @@ class MapDam{
   // Callback for /map
   void processUnfilteredMap(const nav_msgs::OccupancyGrid::ConstPtr& unfiltered_map)
   {
+    // Allocate a new publish-able map:
     mrgs_data_interface::LocalMap filtered_map;
-    // Save the received map as the latest received map
-    last_map = *unfiltered_map;
     // Determine map's region of interest, for cropping
-    int top_line, bottom_line, left_column, right_column;
-    for(int i = 0; i < last_map.data.size(); i++)
+    int top_line = -1, bottom_line = -1, left_column = -1, right_column = -1;
+    for(int i = 0; i < unfiltered_map->data.size(); i++)
     {
+      if(unfiltered_map->data.at(i) != -1)
+      {
+        int line = i/unfiltered_map->info.width;
+        int col = i%unfiltered_map->info.width;
+        if(top_line == -1)
+          top_line = line;
+        if(left_column == -1)
+          left_column = col;
+        if(col < left_column)
+          left_column = col;
+        if(col > right_column)
+          right_column = col;
+        if(line > bottom_line)
+          bottom_line = line;
+      }
     }
+    ROS_INFO("Smallest rectangle found: (%d,%d) to (%d,%d). Original: (%dx%d).", top_line, left_column, bottom_line, right_column, unfiltered_map->info.height, unfiltered_map->info.width);
     // Copy map into message and publish
     filtered_map.filtered_map = *unfiltered_map;
     if(listener->canTransform ("/base_link", "/map", ros::Time(0)))
@@ -81,7 +96,8 @@ class MapDam{
     else
     {
     }
-    map_publisher.publish(filtered_map);
+    last_map = filtered_map;
+    //map_publisher.publish(filtered_map);
   }
   // Constructor
   MapDam(ros::NodeHandle* n_p)
@@ -92,9 +108,14 @@ class MapDam{
     listener = new tf::TransformListener;
   }
   
+  ~MapDam()
+  {
+    delete listener;
+  }
+  
   private:
   // Latest received map
-  nav_msgs::OccupancyGrid last_map;
+  mrgs_data_interface::LocalMap last_map;
   // Is this the first map we've ever received?
   bool first_map;
   // Map publisher

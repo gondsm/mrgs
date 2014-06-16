@@ -66,10 +66,6 @@ class MapDam{
     mrgs_data_interface::LocalMap filtered_map;
     filtered_map.filtered_map = *unfiltered_map;
     
-    // Crop map to smallest rectangle
-    cropMap(filtered_map.filtered_map);
-    ROS_INFO("After cropping, the maps has %d lines and %d columns.", filtered_map.filtered_map.info.height, filtered_map.filtered_map.info.width);
-    
     // Get TF
     if(listener->canTransform ("/base_link", "/map", ros::Time(0)))
     {
@@ -82,6 +78,12 @@ class MapDam{
       ROS_WARN("Could not find map to base_link TF, aborting.");
       return;
     }
+    
+    // Crop map to smallest rectangle
+    cropMap(filtered_map);
+    ROS_INFO("After cropping, the maps has %d lines and %d columns.", filtered_map.filtered_map.info.height, filtered_map.filtered_map.info.width);
+    
+
     
     // Set this as the latest map
     last_map = filtered_map;
@@ -152,16 +154,16 @@ class MapDam{
   // TF listener
   tf::TransformListener *listener;
   // Crops a map to the smallest rectangle
-  void cropMap(nav_msgs::OccupancyGrid& to_crop)
+  void cropMap(mrgs_data_interface::LocalMap& to_crop)
   {
     // Determine map's region of interest, for cropping
     int top_line = -1, bottom_line = -1, left_column = -1, right_column = -1;
-    for(int i = 0; i < to_crop.data.size(); i++)
+    for(int i = 0; i < to_crop.filtered_map.data.size(); i++)
     {
-      if(to_crop.data.at(i) != -1)
+      if(to_crop.filtered_map.data.at(i) != -1)
       {
-        int line = i/to_crop.info.width;
-        int col = i%to_crop.info.width;
+        int line = i/to_crop.filtered_map.info.width;
+        int col = i%to_crop.filtered_map.info.width;
         if(top_line == -1)
           top_line = line;
         if(left_column == -1)
@@ -174,20 +176,20 @@ class MapDam{
           bottom_line = line;
       }
     }
-    ROS_DEBUG("Smallest rectangle found: (%d,%d) to (%d,%d). Original: (%dx%d).", top_line, left_column, bottom_line, right_column, to_crop.info.height, to_crop.info.width);
+    ROS_DEBUG("Smallest rectangle found: (%d,%d) to (%d,%d). Original: (%dx%d).", top_line, left_column, bottom_line, right_column, to_crop.filtered_map.info.height, to_crop.filtered_map.info.width);
     
     // Resize vector and copy data
-    std::vector<int8_t> data_copy = to_crop.data;
-    int old_w = to_crop.info.width, old_h = to_crop.info.height;
+    std::vector<int8_t> data_copy = to_crop.filtered_map.data;
+    int old_w = to_crop.filtered_map.info.width, old_h = to_crop.filtered_map.info.height;
     int new_w = right_column-left_column, new_h = bottom_line-top_line;
-    to_crop.info.width = new_w;
-    to_crop.info.height = new_h;
-    to_crop.data.resize(new_w*new_h);
-    for(int i = 0; i < to_crop.data.size(); i++)
+    to_crop.filtered_map.info.width = new_w;
+    to_crop.filtered_map.info.height = new_h;
+    to_crop.filtered_map.data.resize(new_w*new_h);
+    for(int i = 0; i < to_crop.filtered_map.data.size(); i++)
     {
-      int line = i/to_crop.info.width;
-      int col = i%to_crop.info.width;
-      to_crop.data.at(i) = data_copy.at((line + top_line)*old_w + (col+left_column));
+      int line = i/to_crop.filtered_map.info.width;
+      int col = i%to_crop.filtered_map.info.width;
+      to_crop.filtered_map.data.at(i) = data_copy.at((line + top_line)*old_w + (col+left_column));
     }
   }
 };

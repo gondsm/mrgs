@@ -222,7 +222,7 @@ void newRobotInNetwork(char * ip)
 
   // Send
   // We only need to send maps if we're transmitters or if we're on distributed mode
-  if(g_transmitter_mode || g_centralized_mode)
+  if(g_transmitter_mode || !g_centralized_mode)
     g_my_comm->openForeignRelay(ip, "/mrgs/external_map", true);
 
   // Receive

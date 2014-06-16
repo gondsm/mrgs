@@ -68,6 +68,7 @@ class MapDam{
     
     // Crop map to smallest rectangle
     cropMap(filtered_map.filtered_map);
+    ROS_INFO("After cropping, the maps has %d lines and %d columns.", filtered_map.filtered_map.info.height, filtered_map.filtered_map.info.width);
     
     // Get TF
     if(listener->canTransform ("/base_link", "/map", ros::Time(0)))
@@ -85,11 +86,18 @@ class MapDam{
     // Set this as the latest map
     last_map = filtered_map;
     published = false;
+    if(first_map)
+      received_first_map = true;
   }
   
   void publishIfProper()
   {
     // This function decides if it's time to publish, and publishes if justified.
+    // If we've never received any maps, we won't be publishing anything
+    if(!received_first_map)
+      return;
+    
+    // If this is the first map, we want to publish it immediately
     if(first_map)
     {
       first_map = false;
@@ -98,9 +106,12 @@ class MapDam{
       published = true;
       return;
     }
+    
+    // Decision method goes here
     if(!published)
     {
       map_publisher.publish(last_map);
+      debug_publisher.publish(last_map.filtered_map);
       ROS_INFO("Inserted a map into the system.");
       published = true;
     }
@@ -112,8 +123,10 @@ class MapDam{
   {
     first_map = true;
     published = false;
+    received_first_map = false;
     map_publisher = n_p->advertise<mrgs_data_interface::LocalMap>("mrgs/local_map", 2);
     map_subscriber = n_p->subscribe("map", 2, &MapDam::processUnfilteredMap, this);
+    debug_publisher = n_p->advertise<nav_msgs::OccupancyGrid>("mrgs/local_map/debug", 2);
     listener = new tf::TransformListener;
   }
   
@@ -129,14 +142,17 @@ class MapDam{
   bool published;
   // Is this the first map we've ever received?
   bool first_map;
+  // Have we ever received any maps?
+  bool received_first_map;
   // Map publisher
   ros::Publisher map_publisher;
+  ros::Publisher debug_publisher;
   // Map subscriber
   ros::Subscriber map_subscriber;
   // TF listener
   tf::TransformListener *listener;
   // Crops a map to the smallest rectangle
-  void cropMap(nav_msgs::OccupancyGrid &to_crop)
+  void cropMap(nav_msgs::OccupancyGrid& to_crop)
   {
     // Determine map's region of interest, for cropping
     int top_line = -1, bottom_line = -1, left_column = -1, right_column = -1;
@@ -159,6 +175,20 @@ class MapDam{
       }
     }
     ROS_DEBUG("Smallest rectangle found: (%d,%d) to (%d,%d). Original: (%dx%d).", top_line, left_column, bottom_line, right_column, to_crop.info.height, to_crop.info.width);
+    
+    // Resize vector and copy data
+    std::vector<int8_t> data_copy = to_crop.data;
+    int old_w = to_crop.info.width, old_h = to_crop.info.height;
+    int new_w = right_column-left_column, new_h = bottom_line-top_line;
+    to_crop.info.width = new_w;
+    to_crop.info.height = new_h;
+    to_crop.data.resize(new_w*new_h);
+    for(int i = 0; i < to_crop.data.size(); i++)
+    {
+      int line = i/to_crop.info.width;
+      int col = i%to_crop.info.width;
+      to_crop.data.at(i) = data_copy.at((line + top_line)*old_w + (col+left_column));
+    }
   }
 };
 

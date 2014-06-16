@@ -191,6 +191,10 @@ class MapDam{
       int col = i%to_crop.filtered_map.info.width;
       to_crop.filtered_map.data.at(i) = data_copy.at((line + top_line)*old_w + (col+left_column));
     }
+    
+    // Correct Transformation
+    to_crop.map_to_base_link.transform.translation.x -= right_column*to_crop.filtered_map.info.resolution;
+    to_crop.map_to_base_link.transform.translation.y -= top_line*to_crop.filtered_map.info.resolution;
   }
 };
 

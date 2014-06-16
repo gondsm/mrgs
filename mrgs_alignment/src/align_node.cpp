@@ -149,16 +149,14 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
   // Now we add rotational padding
   // Padding prevents us from losing parts of the map when rotating and translating the maps.
   // We add padding by adding to the final dimension of the map before copying them into mapmerge datatypes.
-  // Determine if we need to add any padding
-  /*int maximum_distance = ceil(sqrt((pow(map_final_r/2.0,2))+(pow(map_final_c/2.0,2))));
+  // This step is necessary since we are assuming all the maps we receive have been cropped by the map dam node.
+  int maximum_distance = ceil(sqrt((pow(map_final_r/2.0,2))+(pow(map_final_c/2.0,2))));
   int padding_rows = maximum_distance - ceil(map_final_r/2.0);
   int padding_cols = maximum_distance - ceil(map_final_c/2.0);
   if(padding_rows < 0) padding_rows = 0;
   if(padding_cols < 0) padding_cols = 0;
   map_final_r += 2*padding_rows;
-  map_final_c += 2*padding_cols;*/
-  int padding_rows = 0;
-  int padding_cols = 0;
+  map_final_c += 2*padding_cols;
   
   /// Copy maps into mapmerge datatypes
   // Transfer grid info into datatypes mapmerge can interpret
@@ -244,11 +242,6 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
   // Show all hypotheses found
   for(int i = 0; i < g_n_hypothesis; i++)
     ROS_DEBUG("Hypothesis %d: ai=%f x=%d y=%d theta=%d", i, hyp[i].ai, hyp[i].deltax, hyp[i].deltay, hyp[i].rotation);
-  
-  /// Determine if padding is necessary so that we don't lose information in map transformations
-  // If it is necessary, we must apply it before transforming the maps
-  padding_cols = 0;
-  padding_rows = 0;
   
   /// Merge maps and pack into response
   // c will contain the rotated map, d will contain the roto-translated map

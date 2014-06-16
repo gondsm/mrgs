@@ -50,27 +50,50 @@
  */
 // ROS includes
 #include "ros/ros.h"
+#include "tf/transform_listener.h"
 #include "nav_msgs/OccupancyGrid.h"
 #include <cstdlib>
+
+// LocalMap message:
+#include "mrgs_data_interface/LocalMap.h"
 
 class MapDam{
   public:
   // Callback for /map
   void processUnfilteredMap(const nav_msgs::OccupancyGrid::ConstPtr& unfiltered_map)
   {
+    mrgs_data_interface::LocalMap filtered_map;
+    // Save the received map as the latest received map
     last_map = *unfiltered_map;
-    map_publisher.publish(unfiltered_map);
+    // Determine map's region of interest, for cropping
+    int top_line, bottom_line, left_column, right_column;
+    for(int i = 0; i < last_map.data.size(); i++)
+    {
+    }
+    // Copy map into message and publish
+    filtered_map.filtered_map = *unfiltered_map;
+    if(listener->canTransform ("/base_link", "/map", ros::Time(0)))
+    {
+      tf::StampedTransform map_to_base_link;
+      listener->lookupTransform(std::string("/map"), std::string("/base_link"), ros::Time(0), map_to_base_link);
+      tf::transformStampedTFToMsg(map_to_base_link, filtered_map.map_to_base_link);
+    }
+    else
+    {
+    }
+    map_publisher.publish(filtered_map);
   }
   // Constructor
   MapDam(ros::NodeHandle* n_p)
   {
     first_map = true;
-    map_publisher = n_p->advertise<nav_msgs::OccupancyGrid>("mrgs/local_map", 2);
+    map_publisher = n_p->advertise<mrgs_data_interface::LocalMap>("mrgs/local_map", 2);
     map_subscriber = n_p->subscribe("map", 2, &MapDam::processUnfilteredMap, this);
+    listener = new tf::TransformListener;
   }
   
   private:
-  // Map Publisher
+  // Latest received map
   nav_msgs::OccupancyGrid last_map;
   // Is this the first map we've ever received?
   bool first_map;
@@ -78,6 +101,8 @@ class MapDam{
   ros::Publisher map_publisher;
   // Map subscriber
   ros::Subscriber map_subscriber;
+  // TF listener
+  tf::TransformListener *listener;
 };
 
 

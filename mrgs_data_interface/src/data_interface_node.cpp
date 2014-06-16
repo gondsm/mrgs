@@ -68,7 +68,6 @@
 #include "nav_msgs/OccupancyGrid.h"
 #include "nav_msgs/Odometry.h"
 #include "geometry_msgs/Pose.h"
-#include "tf/transform_listener.h"
 
 /// Include our messages
 #include "mrgs_data_interface/ForeignMap.h"
@@ -107,9 +106,6 @@ bool g_local_map_exists = false;
 // The values of these are determined by getting parameters from ROS.
 bool g_centralized_mode = false;
 bool g_transmitter_mode = false;
-
-// TF listener
-tf::TransformListener *g_listener;
 
 // Publishers:
 // To enable publishing from callback, to be edited once in main()
@@ -367,9 +363,6 @@ int main(int argc, char **argv)
   g_foreign_map_vector_publisher = g_n->advertise<mrgs_data_interface::ForeignMapVector>("mrgs/foreign_maps", 10);
   g_latest_pose = g_n->advertise<mrgs_data_interface::LatestRobotPose>("mrgs/remote_poses", 10);
   g_since_last_pose = ros::Time::now();
-  
-  // tf init
-  g_listener = new tf::TransformListener;
   
   // Declare callbacks
   ros::Subscriber map = g_n->subscribe<mrgs_data_interface::LocalMap>("mrgs/local_map", 1, processMap);

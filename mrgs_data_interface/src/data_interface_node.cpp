@@ -75,6 +75,7 @@
 #include "mrgs_data_interface/ForeignMapVector.h"
 #include "mrgs_data_interface/NetworkMap.h"
 #include "mrgs_data_interface/LatestRobotPose.h"
+#include "mrgs_data_interface/LocalMap.h"
 
 /// LZ4 include:
 #include "lz4/lz4.h"
@@ -240,7 +241,7 @@ void newRobotInNetwork(char * ip)
   }
 }
 
-void processMap(const nav_msgs::OccupancyGrid::ConstPtr& map)
+void processMap(const mrgs_data_interface::LocalMap::ConstPtr& map)
 {
   // This function processes a new local map. It updates the latest local map pointer and creates a new publish-able
   // NetworkMap.
@@ -249,7 +250,7 @@ void processMap(const nav_msgs::OccupancyGrid::ConstPtr& map)
   ros::Time init = ros::Time::now();
   
   /// Update the local map
-  g_foreign_map_vector.at(0).map = *map;
+  g_foreign_map_vector.at(0).map = map->filtered_map;
   g_local_map_exists = true;
   
   /// Create the new NetworkMap
@@ -257,15 +258,15 @@ void processMap(const nav_msgs::OccupancyGrid::ConstPtr& map)
   // Fill in local mac
   publish_map->mac = g_peer_macs.at(0);
   // Fill in time stamp, metadata and decompressed length
-  publish_map->grid_stamp = map->header.stamp;
-  publish_map->info = map->info;
+  publish_map->grid_stamp = map->filtered_map.header.stamp;
+  publish_map->info = map->filtered_map.info;
   unsigned int map_length = publish_map-> info.height * publish_map-> info.width;
   publish_map->decompressed_length = map_length;
   // Compress the new map
   char* compressed = new char [LZ4_compressBound(map_length)];              // We have to allocate this buffer with 
   char* decompressed = new char [map_length];                               // extra space, lest the data be 
   for(int i = 0; i < map_length; i++)                                        // incompressible.
-    decompressed[i] = map->data.at(i);                                        // Copy data to compress.
+    decompressed[i] = map->filtered_map.data.at(i);                           // Copy data to compress.
   int compressed_bytes = LZ4_compress(decompressed, compressed, map_length);  // Compress
   // Store the new map
   publish_map->compressed_data.clear();
@@ -273,21 +274,9 @@ void processMap(const nav_msgs::OccupancyGrid::ConstPtr& map)
   for(int i = 0; i < compressed_bytes; i++)
     publish_map->compressed_data.push_back(compressed[i]);
   // Add transform to NetworkMap
-  bool will_publish = true;
-  if(g_listener->canTransform ("/base_link", "/map", ros::Time(0)))
-  {
-    tf::StampedTransform map_to_base_link;
-    g_listener->lookupTransform(std::string("/map"), std::string("/base_link"), ros::Time(0), map_to_base_link);
-    tf::transformStampedTFToMsg(map_to_base_link, publish_map->map_to_base_link);
-  }
-  else
-  {
-    ROS_WARN("Can't find map->base_link TF, won't publish network map.");
-    will_publish = false;
-  }
+  publish_map->map_to_base_link = map->map_to_base_link;
   // Publish
-  if(will_publish)
-    g_external_map->publish(*publish_map);
+  g_external_map->publish(*publish_map);
   
   /// Inform
   ROS_INFO("Processed a new local map. Size: %d bytes. Compressed size: %d bytes. Ratio: %f", 
@@ -383,7 +372,7 @@ int main(int argc, char **argv)
   g_listener = new tf::TransformListener;
   
   // Declare callbacks
-  ros::Subscriber map = g_n->subscribe<nav_msgs::OccupancyGrid>("mrgs/local_map", 1, processMap);
+  ros::Subscriber map = g_n->subscribe<mrgs_data_interface::LocalMap>("mrgs/local_map", 1, processMap);
   
   // Regular execution:
   ros::spin();

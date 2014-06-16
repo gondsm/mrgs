@@ -218,9 +218,7 @@ void newRobotInNetwork(char * ip)
   ROS_INFO("Connecting to new peer at %s.", ip);
 
   // Send
-  // We only need to send maps if we're transmitters or if we're on distributed mode
-  if(g_transmitter_mode || !g_centralized_mode)
-    g_my_comm->openForeignRelay(ip, "/mrgs/external_map", true);
+  g_my_comm->openForeignRelay(ip, "/mrgs/external_map", true);
 
   // Receive
   // We only need to receive maps if we are not simple transmitters.

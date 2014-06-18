@@ -14,6 +14,7 @@ if sys.argv[1] != 'clean':
   # Next we get the interface's address from 'ip addr'
   interesting_lines = False
   cmd = subprocess.Popen('ip addr', shell=True, stdout=subprocess.PIPE)
+  ip = []  
   for line in cmd.stdout:
     if sys.argv[1] in line:
       if interesting_lines == False:
@@ -24,6 +25,9 @@ if sys.argv[1] != 'clean':
 	ip = re.findall( r'[0-9]+(?:\.[0-9]+){3}', line )
         ip = ip[0]
   # We show the address to the user, and give them the choice of exiting right away if something's wrong
+  if len(ip) == 0:
+      print 'The interface you gave me doesn\'t exist!'
+      exit()
   print 'I think I\'ve found an ip: ' + ip + '. Next I\'ll check and correct .bashrc.\nIf the address looks like garbled mumbo jumbo, you have 3 seconds to CTRL+C.'
   #print ip
   time.sleep(3)

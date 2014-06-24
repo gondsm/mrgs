@@ -125,7 +125,6 @@
     
     ros::init(argc, argv, "reactive_explore");
     ros::NodeHandle n;
-    ros::Rate loop_rate(10); // 30 Hz
         
     
     // ROS publishers and subscribers

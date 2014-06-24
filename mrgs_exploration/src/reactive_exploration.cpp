@@ -16,8 +16,6 @@
   double ang_rotate=5*PI/180;
   double curr_ang=0;
   int rotation_lock=0;
-  float range_min = 0;
-  float range_max = 4;
   int waitToPublish = 0;
   
   
@@ -35,9 +33,6 @@
     float ur_right=0;
     float ur_left=0;
     float sum_dist=0;
-    range_min = ls->range_min;
-    range_max = ls->range_max;
-    
     
     for (i = 0; i < num_points; ++i)  
     {
@@ -50,10 +45,10 @@
       
       sum_dist+=dist[i];
       
-      if(dist[i]<min_dist && dist[i]>=range_min)
+      if(dist[i]<min_dist && dist[i]>=ls->range_min)
 	min_dist=dist[i];
       
-      if(dist[i] <=range_min+0.15 && dist[i] >=0)
+      if(dist[i] <=ls->range_min+0.15 && dist[i] >=0)
 	danger=1;
       
       if(i<num_points/2)

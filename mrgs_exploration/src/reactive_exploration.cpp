@@ -35,7 +35,8 @@
     float ur_right=0;
     float ur_left=0;
     float sum_dist=0;
-
+    range_min = ls->range_min;
+    range_max = ls->range_max;
     
     
     for (i = 0; i < num_points; ++i)  

@@ -14,5 +14,7 @@ if __name__ == '__main__':
   sub = rospy.Subscriber('scan', LaserScan, laserCallback)
   command = Twist()
   command.angular.z = 1
-  pub.publish(command)
+  while(True):
+    pub.publish(command)
+    rospy.sleep(1.)
   rospy.spin()

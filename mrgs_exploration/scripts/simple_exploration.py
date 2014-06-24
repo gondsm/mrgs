@@ -47,7 +47,7 @@ class SimpleExploration:
     self.pub.publish(command)
     
     # Report performance
-    print("We took {} seconds to process the current scan.".format(rospy.get_rostime() - init))
+    rospy.loginfo("We took {} seconds to process the current scan.".format((rospy.get_rostime() - init)).to_sec())
 
 if __name__ == '__main__':
   rospy.init_node('simple_exploration')

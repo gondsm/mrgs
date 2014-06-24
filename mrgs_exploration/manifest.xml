@@ -1,0 +1,14 @@
+<package>
+  <description brief="mrgs_exploration">
+
+     mrgs_exploration
+
+  </description>
+  <author>vsantos</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/mrgs_exploration</url>
+
+</package>
+
+

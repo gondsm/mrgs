@@ -8,9 +8,10 @@ class SimpleExploration:
   # Constructor
   def __init__(self):
     self.pub = rospy.Publisher('cmd_vel', Twist)
+    self.sub = rospy.Subscriber('scan', LaserScan, self.laserCallback)
     self.danger = False
     self.danger_threshold = 0.1 # In meters
-  
+    
   # Callback for laser scans. This is where the magic happens.
   def laserCallback(self, scan):
     # Determine if we're in danger
@@ -32,6 +33,5 @@ class SimpleExploration:
 if __name__ == '__main__':
   rospy.init_node('simple_exploration')
   explore = SimpleExploration()
-  sub = rospy.Subscriber('scan', LaserScan, explore.laserCallback)
-
+  
   rospy.spin()

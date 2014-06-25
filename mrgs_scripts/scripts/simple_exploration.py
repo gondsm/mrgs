@@ -101,18 +101,18 @@ class SimpleExploration:
     command = Twist()
     if self.danger == True:
       command.angular.z = turning_factor*self.angular_velocity
-      rospy.loginfo("Publishing z = {}".format(command.angular.z))
+      rospy.logdebug("Publishing z = {}".format(command.angular.z))
     elif self.turn_away == True:
       command.linear.x = self.linear_velocity*(minimum_distance)
       command.angular.z = turning_factor*self.angular_velocity
-      rospy.loginfo("Publishing x = {}, z = {}".format(command.linear.x, command.angular.z))
+      rospy.logdebug("Publishing x = {}, z = {}".format(command.linear.x, command.angular.z))
     else:
       command.linear.x = self.linear_velocity*(minimum_distance)
       if command.linear.x < self.minimum_speed:
         command.linear.x = self.minimum_speed
       if command.linear.x > self.maximum_speed:
         command.linear.x = self.maximum_speed
-      rospy.loginfo("Publishing x = {}, min_dist = {}".format(command.linear.x, minimum_distance))
+      rospy.logdebug("Publishing x = {}, min_dist = {}".format(command.linear.x, minimum_distance))
     
     
     # Publish command

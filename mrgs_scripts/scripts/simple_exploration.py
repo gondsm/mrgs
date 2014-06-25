@@ -73,9 +73,9 @@ class SimpleExploration:
         self.danger = False
         self.turn_away = False
         self.danger_threshold = 0.4     # In meters
-        self.turn_away_threshold = 1.5  # Also meters
+        self.turn_away_threshold = 0.7  # Also meters
         self.angular_velocity = 0.5     # In radians, maybe
-        self.linear_velocity = 1        # In m/s
+        self.linear_velocity = 5        # In m/s
         self.maximum_speed = 0.3
         self.minimum_speed = 0.01
         self.last_rotation_factor = 1

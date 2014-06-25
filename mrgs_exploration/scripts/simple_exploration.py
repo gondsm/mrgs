@@ -24,6 +24,7 @@ class SimpleExploration:
     self.danger_threshold = 0.3 # In meters
     self.angular_velocity = 0.2 # In m/s, somehow
     self.linear_velocity = 0.6 # In m/s
+    self.maximum_speed = 1
     
   # Callback for laser scans. This is where the magic happens.
   def laserCallback(self, scan):
@@ -53,7 +54,11 @@ class SimpleExploration:
       command.angular.z = turning_factor*self.angular_velocity
       rospy.loginfo("Publishing z = {}".format(command.angular.z))
     else:
-      command.linear.x = self.linear_velocity*(minimum_distance/scan.range_max)
+      command.linear.x = self.linear_velocity*(minimum_distance)
+      if commmand.linear.x < 0.05:
+        command.linear.x = 0.05
+      if command.linear.x > self.maximum_speed:
+        command.linear.x = self.maximum_speed
       rospy.loginfo("Publishing x = {}, min_dist = {}".format(command.linear.x, minimum_distance))
     
     

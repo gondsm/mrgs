@@ -31,6 +31,7 @@ class SimpleExploration:
     init = rospy.get_rostime()
     
     # Determine if we're in danger
+    self.danger = False
     for value in scan.ranges:
       if value > scan.range_min and value < scan.range_max and value < self.danger_threshold:
         self.danger = True

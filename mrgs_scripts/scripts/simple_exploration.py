@@ -39,6 +39,10 @@
 # Inspired by an algorithm by Francisco Sales.
 #####################################################################
 
+""" 
+This script creates a ROS node that takes care of a very very basic form of
+collision-avoidance based exploration algorithm.
+"""
 
 from __future__ import print_function
 from __future__ import division
@@ -53,8 +57,14 @@ from geometry_msgs.msg import Twist
 # 3. Make it so we only process scans once a second or so, so we're not constantly deciding
 # (is this a good idea?)
 
+
 class SimpleExploration:
-    # Constructor
+    """ This class implements the algorithm itself.
+
+    It keeps a few state variables, defined in the constructor, to dictate the way
+    the robot moves around. Basically, what it does is analyze the range scan and
+    determine which way to move.
+    """
     def __init__(self):
         # Topic-related stuff
         self.pub = rospy.Publisher('cmd_vel', Twist)
@@ -71,8 +81,8 @@ class SimpleExploration:
         self.last_rotation_factor = 1
         self.keep_rotating = False
       
-    # Callback for laser scans. This is where the magic happens.
     def laserCallback(self, scan):        
+        """ Callback for laser scans. This is where the magic happens. """
         # Determine the minimum distance and its index
         turning_factor = 0
         minimum_distance = 0
@@ -110,7 +120,7 @@ class SimpleExploration:
             command.angular.z = turning_factor*self.angular_velocity
             rospy.logdebug("Publishing z = {}".format(command.angular.z))
         elif self.turn_away == True:
-            command.linear.x = self.linear_velocity*(minimum_distance)
+            command.linear.x = self.linear_velocity*(minimum_distance)/3
             command.angular.z = turning_factor*self.angular_velocity*(2*minimum_distance)
             rospy.logdebug("Publishing x = {}, z = {}".format(command.linear.x, command.angular.z))
         else:

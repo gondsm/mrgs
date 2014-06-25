@@ -21,7 +21,7 @@ class SimpleExploration:
     self.sub = rospy.Subscriber('scan', LaserScan, self.laserCallback)
     # Variable initialization
     self.danger = False
-    self.danger_threshold = 0.1 # In meters
+    self.danger_threshold = 0.3 # In meters
     self.angular_velocity = 0.2 # In m/s, somehow
     self.linear_velocity = 0.1 # In m/s
     

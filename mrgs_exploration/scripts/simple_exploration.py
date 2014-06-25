@@ -32,7 +32,7 @@ class SimpleExploration:
     
     # Determine if we're in danger
     for value in scan.ranges:
-      if value > scan.range_min and value < scan.range_max and value < danger_threshold:
+      if value > scan.range_min and value < scan.range_max and value < self.danger_threshold:
         self.danger = True
         break
     

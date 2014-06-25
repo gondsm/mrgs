@@ -66,7 +66,7 @@ class SimpleExploration:
     self.turn_away_threshold = 0.6
     self.angular_velocity = 0.2 # In m/s, somehow
     self.linear_velocity = 0.6 # In m/s
-    self.maximum_speed = 1
+    self.maximum_speed = 0.3
     self.minimum_speed = 0.05
     
   # Callback for laser scans. This is where the magic happens.
@@ -75,29 +75,31 @@ class SimpleExploration:
     init = rospy.get_rostime()
     
     # Determine if we're in danger
-    self.danger = False
     turning_factor = 0
     minimum_distance = 0
+    minimum_index = 0
     for index, value in enumerate(scan.ranges):
       if value > scan.range_min and value < scan.range_max:
         if minimum_distance == 0 or value < minimum_distance:
           minimum_distance = value
-        if value < self.danger_threshold:
-          self.danger = True
-          if(index < len(scan.ranges)//2):
-            turning_factor = 1
-          else:
-            turning_factor = -1
-          break
-        if value < self.turn_away_threshold:
-          self.turn_away = True
-          if(index < len(scan.ranges)//2):
-            turning_factor = 1
-          else:
-            turning_factor = -1
-          break
+          minimum_index = index
+    if minimum_distance < self.danger_threshold:
+      self.danger = True
+      self.turn_away = False
+    elif minimum_distance < self.turn_away_threshold:
+      self.turn_away = True
+      self.danger = False
+    else:
+      self.turn_away = False
+      self.danger = False
+    
+    # Determine where to turn next
+    if(minimum_index < len(scan.ranges)//2):
+      turning_factor = 1
+    else:
+      turning_factor = -1
 
-    # Determine where we should go next, either forward or rotate
+    # Issue Command
     command = Twist()
     if self.danger == True:
       command.angular.z = turning_factor*self.angular_velocity

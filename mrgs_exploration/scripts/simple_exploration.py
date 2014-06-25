@@ -51,10 +51,11 @@ class SimpleExploration:
     command = Twist()
     if self.danger == True:
       command.angular.z = turning_factor*self.angular_velocity
+      rospy.loginfo("Publishing z = {}".format(command.angular.z))
     else:
-      command.linear.x = self.linear_velocity*()
+      command.linear.x = self.linear_velocity*(minimum_distance/scan.range_max)
+      rospy.loginfo("Publishing x = {}, min_dist = {}".format(command.linear.x, minimum_distance))
     
-    rospy.loginfo("Publishing z = {}".format(command.angular.z))
     
     # Publish command
     self.pub.publish(command)

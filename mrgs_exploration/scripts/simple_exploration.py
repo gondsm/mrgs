@@ -21,7 +21,9 @@ class SimpleExploration:
     self.sub = rospy.Subscriber('scan', LaserScan, self.laserCallback)
     # Variable initialization
     self.danger = False
+    self.turn_away = False
     self.danger_threshold = 0.3 # In meters
+    self.turn_away_threshold = 0.6
     self.angular_velocity = 0.2 # In m/s, somehow
     self.linear_velocity = 0.6 # In m/s
     self.maximum_speed = 1
@@ -40,6 +42,13 @@ class SimpleExploration:
       if value > scan.range_min and value < scan.range_max:
         if minimum_distance == 0 or value < minimum_distance:
           minimum_distance = value
+        if value < self.turn_away_threshold:
+          self.turn_away = True
+          if(index < len(scan.ranges)//2):
+            turning_factor = 1
+          else:
+            turning_factor = -1
+          break
         if value < self.danger_threshold:
           self.danger = True
           if(index < len(scan.ranges)//2):
@@ -54,6 +63,10 @@ class SimpleExploration:
     if self.danger == True:
       command.angular.z = turning_factor*self.angular_velocity
       rospy.loginfo("Publishing z = {}".format(command.angular.z))
+    elif self.turnin_away == True:
+      command.linear.x = self.linear_velocity/2*(minimum_distance)
+      command.angular.z = turning_factor*self.angular_velocity
+      rospy.loginfo("Publishing x = {}, z = {}".format(command.linear.x, command.angular.z))
     else:
       command.linear.x = self.linear_velocity*(minimum_distance)
       if command.linear.x < self.minimum_speed:

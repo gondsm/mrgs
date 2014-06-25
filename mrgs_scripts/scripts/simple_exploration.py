@@ -49,82 +49,75 @@ from geometry_msgs.msg import Twist
 
 # To-do:
 # 1. Use whole algorithm, including deciding which way to go
-# 2. Port this into the scripts package, it doesn't deserve a whole package
+# 2. Use some sort of repulsion, instead of thresholds
 # 3. Make it so we only process scans once a second or so, so we're not constantly deciding
 # (is this a good idea?)
 
 class SimpleExploration:
-  # Constructor
-  def __init__(self):
-    # Topic-related stuff
-    self.pub = rospy.Publisher('cmd_vel', Twist)
-    self.sub = rospy.Subscriber('scan', LaserScan, self.laserCallback)
-    # Variable initialization
-    self.danger = False
-    self.turn_away = False
-    self.danger_threshold = 0.3 # In meters
-    self.turn_away_threshold = 0.6
-    self.angular_velocity = 0.2 # In m/s, somehow
-    self.linear_velocity = 0.6 # In m/s
-    self.maximum_speed = 0.3
-    self.minimum_speed = 0.05
-    
-  # Callback for laser scans. This is where the magic happens.
-  def laserCallback(self, scan):
-    # Start counting time, for logging purposes
-    init = rospy.get_rostime()
-    
-    # Determine if we're in danger
-    turning_factor = 0
-    minimum_distance = 0
-    minimum_index = 0
-    for index, value in enumerate(scan.ranges):
-      if value > scan.range_min and value < scan.range_max:
-        if minimum_distance == 0 or value < minimum_distance:
-          minimum_distance = value
-          minimum_index = index
-    if minimum_distance < self.danger_threshold:
-      self.danger = True
-      self.turn_away = False
-    elif minimum_distance < self.turn_away_threshold:
-      self.turn_away = True
-      self.danger = False
-    else:
-      self.turn_away = False
-      self.danger = False
-    
-    # Determine where to turn next
-    if(minimum_index < len(scan.ranges)//2):
-      turning_factor = 1
-    else:
-      turning_factor = -1
+    # Constructor
+    def __init__(self):
+        # Topic-related stuff
+        self.pub = rospy.Publisher('cmd_vel', Twist)
+        self.sub = rospy.Subscriber('scan', LaserScan, self.laserCallback)
+        # Variable initialization
+        self.danger = False
+        self.turn_away = False
+        self.danger_threshold = 0.4 # In meters
+        self.turn_away_threshold = 0.7
+        self.angular_velocity = 0.2 # In m/s, somehow
+        self.linear_velocity = 0.6 # In m/s
+        self.maximum_speed = 0.3
+        self.minimum_speed = 0.05
+      
+    # Callback for laser scans. This is where the magic happens.
+    def laserCallback(self, scan):        
+        # Determine the minimum distance and its index
+        turning_factor = 0
+        minimum_distance = 0
+        minimum_index = 0
+        for index, value in enumerate(scan.ranges):
+            if value > scan.range_min and value < scan.range_max:
+                if minimum_distance == 0 or value < minimum_distance:
+                    minimum_distance = value
+                    minimum_index = index
+        if minimum_distance < self.danger_threshold:
+            self.danger = True
+            self.turn_away = False
+        elif minimum_distance < self.turn_away_threshold:
+            self.turn_away = True
+            self.danger = False
+        else:
+            self.turn_away = False
+            self.danger = False
+        
+        # Determine where to turn next
+        if(minimum_index < len(scan.ranges)//2):
+            turning_factor = 1
+        else:
+            turning_factor = -1
 
-    # Issue Command
-    command = Twist()
-    if self.danger == True:
-      command.angular.z = turning_factor*self.angular_velocity
-      rospy.logdebug("Publishing z = {}".format(command.angular.z))
-    elif self.turn_away == True:
-      command.linear.x = self.linear_velocity*(minimum_distance)
-      command.angular.z = turning_factor*self.angular_velocity
-      rospy.logdebug("Publishing x = {}, z = {}".format(command.linear.x, command.angular.z))
-    else:
-      command.linear.x = self.linear_velocity*(minimum_distance)
-      if command.linear.x < self.minimum_speed:
-        command.linear.x = self.minimum_speed
-      if command.linear.x > self.maximum_speed:
-        command.linear.x = self.maximum_speed
-      rospy.logdebug("Publishing x = {}, min_dist = {}".format(command.linear.x, minimum_distance))
-    
-    
-    # Publish command
-    self.pub.publish(command)
-    
-    # Report performance
-    #rospy.loginfo("We took {} seconds to process the current scan.".format((rospy.get_rostime() - init)))
+        # Issue Command
+        command = Twist()
+        if self.danger == True:
+            command.angular.z = turning_factor*self.angular_velocity
+            rospy.logdebug("Publishing z = {}".format(command.angular.z))
+        elif self.turn_away == True:
+            command.linear.x = self.linear_velocity*(minimum_distance)
+            command.angular.z = turning_factor*self.angular_velocity*(2*minimum_distance)
+            rospy.logdebug("Publishing x = {}, z = {}".format(command.linear.x, command.angular.z))
+        else:
+            command.linear.x = self.linear_velocity*(minimum_distance)
+            if command.linear.x < self.minimum_speed:
+                command.linear.x = self.minimum_speed
+            if command.linear.x > self.maximum_speed:
+                command.linear.x = self.maximum_speed
+            rospy.logdebug("Publishing x = {}, min_dist = {}".format(command.linear.x, minimum_distance))
+        
+        # Publish command
+        self.pub.publish(command)
 
 if __name__ == '__main__':
-  rospy.init_node('simple_exploration')
-  explore = SimpleExploration()
-  
-  rospy.spin()
+    rospy.init_node('simple_exploration')
+    explore = SimpleExploration()
+    
+    rospy.spin()

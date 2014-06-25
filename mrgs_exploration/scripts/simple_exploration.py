@@ -36,7 +36,7 @@ class SimpleExploration:
     for index, value in enumerate(scan.ranges):
       if value > scan.range_min and value < scan.range_max and value < self.danger_threshold:
         self.danger = True
-        if(index < len(scan.ranges)):
+        if(index < len(scan.ranges)//2):
           turning_factor = 1
         else
           turning_factor = -1

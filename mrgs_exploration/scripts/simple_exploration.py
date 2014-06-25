@@ -35,22 +35,24 @@ class SimpleExploration:
     turning_factor = 0
     minimum_distance = 0
     for index, value in enumerate(scan.ranges):
-      if value > scan.range_min and value < scan.range_max and value < self.danger_threshold:
-        self.danger = True
-        if(index < len(scan.ranges)//2):
-          turning_factor = 1
-        else:
-          turning_factor = -1
-        break
-        if minimum_distance = 0 or value < minimum_distance
+      if value > scan.range_min and value < scan.range_max:
+        if minimum_distance == 0 or value < minimum_distance:
           minimum_distance = value
+        if value < self.danger_threshold:
+          self.danger = True
+          if(index < len(scan.ranges)//2):
+            turning_factor = 1
+          else:
+            turning_factor = -1
+          break
+
     
     # Determine where we should go next, either forward or rotate
     command = Twist()
     if self.danger == True:
       command.angular.z = turning_factor*self.angular_velocity
     else:
-      command.linear.x = self.linear_velocity*(minimum_distance/scan.range_max)
+      command.linear.x = self.linear_velocity*()
     
     rospy.loginfo("Publishing z = {}".format(command.angular.z))
     

@@ -32,15 +32,20 @@ class SimpleExploration:
     
     # Determine if we're in danger
     self.danger = False
-    for value in scan.ranges:
+    turning_factor = 0
+    for index, value in enumerate(scan.ranges):
       if value > scan.range_min and value < scan.range_max and value < self.danger_threshold:
         self.danger = True
+        if(index < len(scan.ranges)):
+          turning_factor = 1
+        else
+          turning_factor = -1
         break
     
     # Determine where we should go next, either forward or rotate
     command = Twist()
     if self.danger == True:
-      command.angular.z = self.angular_velocity
+      command.angular.z = turning_factor*self.angular_velocity
     else:
       command.linear.x = self.linear_velocity
       
@@ -48,7 +53,7 @@ class SimpleExploration:
     self.pub.publish(command)
     
     # Report performance
-    rospy.loginfo("We took {} seconds to process the current scan.".format((rospy.get_rostime() - init)))
+    #rospy.loginfo("We took {} seconds to process the current scan.".format((rospy.get_rostime() - init)))
 
 if __name__ == '__main__':
   rospy.init_node('simple_exploration')

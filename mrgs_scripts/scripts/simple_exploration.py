@@ -68,6 +68,8 @@ class SimpleExploration:
         self.linear_velocity = 0.6 # In m/s
         self.maximum_speed = 0.3
         self.minimum_speed = 0.05
+        self.last_rotation_factor = 1
+        self.keep_rotating = False
       
     # Callback for laser scans. This is where the magic happens.
     def laserCallback(self, scan):        
@@ -83,18 +85,24 @@ class SimpleExploration:
         if minimum_distance < self.danger_threshold:
             self.danger = True
             self.turn_away = False
+            self.keep_rotating = True
         elif minimum_distance < self.turn_away_threshold:
             self.turn_away = True
             self.danger = False
+            self.keep_rotating = False
         else:
             self.turn_away = False
             self.danger = False
         
         # Determine where to turn next
-        if(minimum_index < len(scan.ranges)//2):
+        if self.keep_rotating == True:
+            turning_factor = self.last_rotation_factor
+        elif minimum_index < len(scan.ranges)//2:
             turning_factor = 1
+            self.last_rotation_factor = 1
         else:
             turning_factor = -1
+            self.last_rotation_factor = -1
 
         # Issue Command
         command = Twist()

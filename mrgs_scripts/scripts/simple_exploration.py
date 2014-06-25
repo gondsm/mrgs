@@ -82,15 +82,15 @@ class SimpleExploration:
       if value > scan.range_min and value < scan.range_max:
         if minimum_distance == 0 or value < minimum_distance:
           minimum_distance = value
-        if value < self.turn_away_threshold:
-          self.turn_away = True
+        if value < self.danger_threshold:
+          self.danger = True
           if(index < len(scan.ranges)//2):
             turning_factor = 1
           else:
             turning_factor = -1
           break
-        if value < self.danger_threshold:
-          self.danger = True
+        if value < self.turn_away_threshold:
+          self.turn_away = True
           if(index < len(scan.ranges)//2):
             turning_factor = 1
           else:

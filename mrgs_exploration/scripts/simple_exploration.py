@@ -38,7 +38,7 @@ class SimpleExploration:
         self.danger = True
         if(index < len(scan.ranges)//2):
           turning_factor = 1
-        else
+        else:
           turning_factor = -1
         break
     
@@ -48,7 +48,9 @@ class SimpleExploration:
       command.angular.z = turning_factor*self.angular_velocity
     else:
       command.linear.x = self.linear_velocity
-      
+    
+    rospy.loginfo("Publishing z = {}".format(command.angular.z))
+    
     # Publish command
     self.pub.publish(command)
     

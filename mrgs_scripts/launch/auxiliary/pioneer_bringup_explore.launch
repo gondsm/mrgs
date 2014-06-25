@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<launch>
+  <node pkg="ROSARIA" type="RosAria" name="ROSARIA">
+    <remap from="ROSARIA/pose" to="odom"/>
+	<!--<param name="port" value="/dev/ttyUSB1" />-->
+  </node>
+
+  <node pkg="hokuyo_node" type="hokuyo_node" name="hokuyo_node" output="screen">
+    <param name="port" value="/dev/ttyACM0" />
+  </node>
+
+ <node pkg="tf" type="static_transform_publisher" name="base_link_to_laser" args="0.225 0.0 0.1 0.0 0.0 0.0 1.0 /base_link /laser 100" />
+ 
+  <!-- exploration node -->
+  <node pkg="mrgs_scripts"  type="simple_exploration.py" name="simple_exploration">
+    <remap from="cmd_vel" to="ROSARIA/cmd_vel"/>
+  </node> 
+
+ 
+ <!--<node pkg="tf" type="static_transform_publisher" name="base_link_to_laser" args="0.225 0.0 -0.065 0.0 0.0 0.0 1.0 /base_link /laser 100" />-->
+ <!-- ao meter o z a negativo, tenho de colocar min_obstacle_height: -1.0 no costmap_common_params -->
+
+</launch>

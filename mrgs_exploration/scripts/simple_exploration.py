@@ -64,7 +64,7 @@ class SimpleExploration:
       command.angular.z = turning_factor*self.angular_velocity
       rospy.loginfo("Publishing z = {}".format(command.angular.z))
     elif self.turnin_away == True:
-      command.linear.x = self.linear_velocity/2*(minimum_distance)
+      command.linear.x = self.linear_velocity*(minimum_distance)
       command.angular.z = turning_factor*self.angular_velocity
       rospy.loginfo("Publishing x = {}, z = {}".format(command.linear.x, command.angular.z))
     else:

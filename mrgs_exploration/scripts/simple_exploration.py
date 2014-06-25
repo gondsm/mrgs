@@ -41,7 +41,7 @@ class SimpleExploration:
     if self.danger == True:
       command.angular.z = self.angular_velocity
     else:
-      command.linear.x = self_linear_velocity
+      command.linear.x = self.linear_velocity
       
     # Publish command
     self.pub.publish(command)

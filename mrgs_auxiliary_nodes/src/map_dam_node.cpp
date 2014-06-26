@@ -81,7 +81,7 @@ class MapDam{
     
     // Crop map to smallest rectangle
     cropMap(filtered_map);
-    ROS_INFO("After cropping, the maps has %d lines and %d columns.", filtered_map.filtered_map.info.height, filtered_map.filtered_map.info.width);
+    ROS_INFO("After cropping, the map has %d lines and %d columns.", filtered_map.filtered_map.info.height, filtered_map.filtered_map.info.width);
     
 
     

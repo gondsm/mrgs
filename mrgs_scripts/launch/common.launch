@@ -8,6 +8,8 @@
 -->
 <launch>
 
+  <env name="ROSCONSOLE_FORMAT" value="[${severity}] [${node}]: ${message}"/>
+
   <!-- Arguments -->
   <arg name="interface"/>
   <arg name="is_centralized"/>

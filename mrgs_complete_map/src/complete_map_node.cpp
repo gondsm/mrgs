@@ -58,6 +58,7 @@
 #include "mrgs_alignment/align.h"
 #include "mrgs_data_interface/ForeignMapVector.h"
 #include "mrgs_complete_map/LatestMapTF.h"
+#include "geometry_msgs/TransformStamped.h"
 #include <cstdlib>
 
 // Global variables
@@ -121,6 +122,13 @@ void processForeignMaps(const mrgs_data_interface::ForeignMapVector::ConstPtr& m
   std::vector<geometry_msgs::TransformStamped> empty_vec_tf;
   nav_msgs::OccupancyGrid empty_map;
   geometry_msgs::TransformStamped empty_transform;
+  empty_transform.transform.translation.x = 0;
+  empty_transform.transform.translation.y = 0;
+  empty_transform.transform.translation.z = 0;
+  empty_transform.transform.rotation.x = 0;
+  empty_transform.transform.rotation.y = 0;
+  empty_transform.transform.rotation.z = 0;
+  empty_transform.transform.rotation.w = 1;
   while(g_aligned_maps.size() < g_is_dirty.size()-1)
   {
     g_aligned_maps.push_back(empty_vec);
@@ -189,11 +197,33 @@ void processForeignMaps(const mrgs_data_interface::ForeignMapVector::ConstPtr& m
         {
           // First row, we must pull from the newly-received maps
           g_aligned_maps.at(i-1).at(j) = maps->map_vector.at(2*j).map;
+          // And add an identity transform to the vector
+          geometry_msgs::TransformStamped identity_transform;
+          identity_transform.transform.translation.x = 0;
+          identity_transform.transform.translation.y = 0;
+          identity_transform.transform.translation.z = 0;
+          identity_transform.transform.rotation.x = 0;
+          identity_transform.transform.rotation.y = 0;
+          identity_transform.transform.rotation.z = 0;
+          identity_transform.transform.rotation.w = 1;
+          g_transforms.at(i-1).at(2*j) = identity_transform;
+          g_transforms.at(i-1).at((2*j)+1) = identity_transform;
         }
         else
         {
           // Subsequent rows, we pull from the row beneath
           g_aligned_maps.at(i-1).at(j) = g_aligned_maps.at(i-2).at(2*j);
+          // And add an identity transform to the vector
+          geometry_msgs::TransformStamped identity_transform;
+          identity_transform.transform.translation.x = 0;
+          identity_transform.transform.translation.y = 0;
+          identity_transform.transform.translation.z = 0;
+          identity_transform.transform.rotation.x = 0;
+          identity_transform.transform.rotation.y = 0;
+          identity_transform.transform.rotation.z = 0;
+          identity_transform.transform.rotation.w = 1;
+          g_transforms.at(i-1).at(2*j) = identity_transform;
+          g_transforms.at(i-1).at((2*j)+1) = identity_transform;
         }
       }
       else

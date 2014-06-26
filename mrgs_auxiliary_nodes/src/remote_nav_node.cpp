@@ -111,8 +111,7 @@ class RemoteNav{
   void broadcastData()
   {
     //    Iterate through the various vectors, publishing data in the correct
-    //    TF frames. Don't forget to correctly build the header for the stamped
-    //    StampedPoses.
+    //    TF frames. 
     char frame[30];
     char child_frame[30];
     for(int i = 0; i < map_transform_vector.size(); i++)

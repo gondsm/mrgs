@@ -85,6 +85,7 @@
 /// Other includes
 #include <string>
 #include <fstream>
+#include <signal.h>
 
 /// Global variables
 // Node handle. Must be global to be accessible by callbacks.
@@ -119,6 +120,13 @@ ros::Publisher g_external_pose;
 // Time at which the last pose transmission occurred
 ros::Time g_since_last_pose;
 
+// Performance Metrics:
+// Compressed and Uncompressed size of each sent map:
+std::vector<int> g_uncompressed_size;
+std::vector<int> g_sent_size;
+// Processing times
+std::vector<float> g_map_processing_time;
+
 inline int getRobotID(std:: string mac){
   // Find the desired MAC's index
   // If we're on centralized mode, this may show up empty once
@@ -126,7 +134,7 @@ inline int getRobotID(std:: string mac){
     return -1;
   // If not, we search
   int index = std::distance(g_peer_macs.begin(), std::find(g_peer_macs.begin(), g_peer_macs.end(), mac));
-  // If the index isn't smaller than the size, the the desired MAC doesn't exist, 
+  // If the index isn't smaller than the size, the desired MAC doesn't exist, 
   // and we return -1 to indicate just that.
   if(index < g_peer_macs.size())
     return index;
@@ -273,9 +281,42 @@ void processMap(const mrgs_data_interface::LocalMap::ConstPtr& map)
   g_external_map->publish(*publish_map);
   
   /// Inform
-  ROS_INFO("Processed a new local map. Size: %d bytes. Compressed size: %d bytes. Ratio: %f", 
+  ROS_DEBUG("Processed a new local map. Size: %d bytes. Compressed size: %d bytes. Ratio: %f", 
            map_length, compressed_bytes, (float)map_length/(float)compressed_bytes);
-  ROS_INFO("Processing local map took %fs.", (ros::Time::now() - init).toSec());
+  g_sent_size.push_back(compressed_bytes);
+  g_uncompressed_size.push_back(map_length);
+  float process_time = (ros::Time::now() - init).toSec();
+  ROS_INFO("Processing local map took %fs.", process_time);
+  g_map_processing_time.push_back(process_time);
+}
+
+void sigintHandler(int sig)
+{
+  // This function prints a few stats before shutting down the node
+  ROS_INFO("Network stats for this node:");
+  float mean_ratio = 0;
+  int total_sent_bytes = 0;
+  int total_uncompressed_bytes = 0;
+  float total_processing_time = 0;
+  for(int i = 0; i < g_sent_size.size(); i++)
+  {
+    total_sent_bytes += g_sent_size.at(i);
+    total_uncompressed_bytes += g_uncompressed_size.at(i);
+    total_processing_time += g_map_processing_time.at(i);
+  }
+  
+  if(g_sent_size.size() > 0)
+  {
+    ROS_INFO("%d maps processed.", g_sent_size.size());
+    ROS_INFO("Total map size (before compression): %d bytes.", total_uncompressed_bytes);
+    ROS_INFO("Total sent size: %d bytes.", total_sent_bytes);
+    ROS_INFO("Mean compression ratio: %f.", float(total_uncompressed_bytes)/total_sent_bytes);
+    ROS_INFO("Data savings: %d bytes.", total_uncompressed_bytes - total_sent_bytes);
+    ROS_INFO("Time spent processing local maps (including compression): %fs.", total_processing_time);
+  }
+  
+  ros::shutdown();
+  
 }
 
 int main(int argc, char **argv)
@@ -364,6 +405,7 @@ int main(int argc, char **argv)
   
   // Declare callbacks
   ros::Subscriber map = g_n->subscribe<mrgs_data_interface::LocalMap>("mrgs/local_map", 1, processMap);
+  signal(SIGINT, sigintHandler);
   
   // Regular execution:
   ros::spin();

@@ -209,7 +209,7 @@ void rotate_map(grid_map& outmap,const grid_map& inmap,int thetaDeg,unsigned cha
 
 
    cvWarpAffine(img,dst,mat,
-	       CV_INTER_CUBIC + CV_WARP_FILL_OUTLIERS,
+	       cv::INTER_NEAREST + CV_WARP_FILL_OUTLIERS,
 	       cvScalarAll(filler));
 
   outmap.resize_map(r,c);

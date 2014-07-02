@@ -193,8 +193,10 @@ class MapDam{
     }
     
     // Correct Transformation
-    to_crop.map_to_base_link.transform.translation.x -= right_column*to_crop.filtered_map.info.resolution;
-    to_crop.map_to_base_link.transform.translation.y -= top_line*to_crop.filtered_map.info.resolution;
+    //to_crop.map_to_base_link.transform.translation.x -= right_column*to_crop.filtered_map.info.resolution;
+    //to_crop.map_to_base_link.transform.translation.y -= top_line*to_crop.filtered_map.info.resolution;
+    to_crop.filtered_map.info.origin.position.x > 0 ? to_crop.filtered_map.info.origin.position.x-=right_column*to_crop.filtered_map.info.resolution : to_crop.filtered_map.info.origin.position.x+=right_column*to_crop.filtered_map.info.resolution;
+    to_crop.filtered_map.info.origin.position.y > 0 ? to_crop.filtered_map.info.origin.position.y-= top_line*to_crop.filtered_map.info.resolution:to_crop.filtered_map.info.origin.position.y+= top_line*to_crop.filtered_map.info.resolution;
   }
 };
 

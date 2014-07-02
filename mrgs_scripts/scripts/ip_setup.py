@@ -39,7 +39,7 @@ already_set = False
 i = 0
 linelist = []
 for line in cmd2.stdout:
-  if ('export ROS_MASTER_URI=' in line) or ('export ROS_IP' in line):
+  if ('export ROS_MASTER_URI=' in line) or ('export ROS_IP' in line) or ('export MRGS_INTERFACE' in line):
     already_set = True
     linelist.append(i)
   i = i+1
@@ -64,9 +64,10 @@ else:
   print 'Lines didn\'t exist.'
 
 if sys.argv[1] != 'clean':
-  lines = ['export ROS_MASTER_URI=http://'+ip+':11311\n', 'export ROS_IP='+ip+'\n']
+  lines = ['export ROS_MASTER_URI=http://'+ip+':11311\n', 'export ROS_IP='+ip+'\n', 'export MRGS_INTERFACE='+sys.argv[1]+'\n']
   bashrc = open(home+'/.bashrc', "a")
   bashrc.write(lines[0])
   bashrc.write(lines[1])
+  bashrc.write(lines[2])
   bashrc.close()
   print 'Lines appended.'

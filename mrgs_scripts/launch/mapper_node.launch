@@ -1,6 +1,6 @@
 <launch>
   <!-- Arguments -->
-  <arg name="interface" default="wlan0" />
+  <arg name="interface" default="$(optenv MRGS_INTERFACE)" />
   
   <!-- Parameters -->
   <!--param name="use_sim_time" value="true" /-->

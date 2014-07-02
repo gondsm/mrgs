@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import subprocess               # For shell calls
 import sys                      # For command line arguments
 import time                     # So that we can wait

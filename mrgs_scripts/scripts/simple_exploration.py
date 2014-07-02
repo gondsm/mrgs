@@ -73,7 +73,6 @@ class SimpleExploration:
         self.danger = False
         self.turn_away = False
         self.danger_threshold = 0.4     # In meters
-        #self.turn_away_threshold = 0.7  # Also meters
         self.angular_velocity = 0.5     # In radians, maybe
         self.linear_velocity = 0.5        # In m/s
         self.maximum_speed = 0.3
@@ -96,13 +95,10 @@ class SimpleExploration:
             self.danger = True
             self.turn_away = False
             self.keep_rotating = True
-        #elif minimum_distance < self.turn_away_threshold:
-            #self.turn_away = True
-            #self.danger = False
-            #self.keep_rotating = False
         else:
             self.turn_away = False
             self.danger = False
+            self.keep_rotating = False
         
         # Determine where to turn next
         if self.keep_rotating == True:
@@ -119,10 +115,6 @@ class SimpleExploration:
         if self.danger == True:
             command.angular.z = turning_factor*self.angular_velocity
             rospy.logdebug("Publishing z = {}.".format(command.angular.z))
-        elif self.turn_away == True:
-            command.linear.x = self.linear_velocity*(minimum_distance)/1.5
-            command.angular.z = turning_factor*self.angular_velocity/(minimum_distance)
-            rospy.logdebug("Publishing x = {}, z = {}".format(command.linear.x, command.angular.z))
         else:
             command.linear.x = self.linear_velocity*(minimum_distance)
             if command.linear.x < self.minimum_speed:

@@ -1,7 +1,7 @@
 import subprocess               # For shell calls
 import sys                      # For command line arguments
 import time                     # So that we can wait
-import re			# regex
+import re                       # regex
 from os.path import expanduser  # So that we can get to the home directory
 
 

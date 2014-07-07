@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<launch>
+  <!-- The laser should be plugged in first, and then the robot. -->
+  <node pkg="mrl_robot_drivers" type="traxbot_node" name="traxbot_node" args="/dev/ttyACM1" output="screen" />
+
+  <node pkg="hokuyo_node" type="hokuyo_node" name="hokuyo_node" output="screen">
+    <param name="port" value="/dev/ttyACM0" />
+  </node>
+  
+  <node pkg="mrgs_scripts"  type="simple_exploration.py" name="simple_exploration"/>
+</launch>

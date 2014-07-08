@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <launch>
   <!-- The robot should be plugged in first, and then the laser. -->
-  <node pkg="mrl_robots_drivers" type="traxbot_node" name="traxbot_node" args="/dev/ttyACM1" output="screen" />
+  <node pkg="mrl_robots_drivers" type="stingbot_node" name="stingbot_node" args="/dev/ttyACM1" output="screen" />
 
   <node pkg="hokuyo_node" type="hokuyo_node" name="hokuyo_node" output="screen">
     <param name="port" value="/dev/ttyACM1" />

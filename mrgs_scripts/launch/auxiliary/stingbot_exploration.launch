@@ -8,4 +8,6 @@
   </node>
   
   <node pkg="mrgs_scripts"  type="simple_exploration.py" name="simple_exploration"/>
+  
+  <node pkg="tf" type="static_transform_publisher" name="base_link_to_laser" args="0.09 0.0 0.05 0.0 0.0 0.0 1.0 /base_link /laser 100" />
 </launch>

@@ -36,9 +36,22 @@ The system can run in one of two different modes: centralized and distributed. T
 
 The launching of the system is taken care of by using the provided launch files.
 
+#### Setup
+Start by running:
+
+    $rosrun mrgs_scripts ip_setup if
+
+Where if is the network interface you're going to be using to communicate with other robots. You'll need to restart your terminal after this step, since we'll be adding _export_ directives to your .bashrc.
+
+Now let's start olsrd:
+
+    $rosrun mrgs_scripts launch_olsrd.sh
+    
+These steps should be taken in every robot you're going to use, including central nodes.
+
 #### Distributed (normal) mode:
 
-    $roslaunch mrgs_scripts distributed_node.launch interface:=wlan0
+    $roslaunch mrgs_scripts distributed_node.launch
     
 Interface is usually wlan0, eth0 or something similar, substitute wlan0 with whatever interface OLSRd is using.
 
@@ -49,7 +62,7 @@ On the central machine:
     
 On the remaining machines:
 
-    $roslaunch mrgs_scripts transmitter_node.launch interface:=wlan0
+    $roslaunch mrgs_scripts mapper_node.launch
     
 Same rules as before for the interface argument.
 

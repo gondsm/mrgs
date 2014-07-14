@@ -66,6 +66,10 @@ On the remaining machines:
     
 Same rules as before for the interface argument.
 
+#### Something else
+
+You can mix and match the centralized and distributed nodes to fit your particular team. Just make sure that every node is connected to the same network and that olsrd is running.
+
 ## Stack Overview
 The code is divided into four packages, with an additional package holding scripts, launch files, bags and the like.
 

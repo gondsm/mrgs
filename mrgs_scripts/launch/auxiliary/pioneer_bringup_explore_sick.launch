@@ -6,7 +6,7 @@
   
   <node pkg="ROSARIA" type="RosAria" name="ROSARIA">
     <remap from="ROSARIA/pose" to="odom"/>
-	<param name="port" value="/dev/ttyUSB1" />
+	<param name="port" value="/dev/ttyUSB0" />
   </node>
 
   <node pkg="sicktoolbox_wrapper" type="sicklms" name="sicklms" output="screen">

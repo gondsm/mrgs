@@ -14,9 +14,9 @@
 
   <node pkg="tf" type="static_transform_publisher" name="base_link_to_laser" args="0.0 0.0 0.3 0.0 0.0 0.0 1.0 /base_link /laser 100" />
  
-  <!-- exploration node 
+  <!-- exploration node -->
   <node pkg="mrgs_scripts"  type="simple_exploration.py" name="simple_exploration">
     <remap from="cmd_vel" to="ROSARIA/cmd_vel"/>
-  </node> -->
+  </node>
   
 </launch>

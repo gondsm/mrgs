@@ -1,12 +1,13 @@
 mrgs
 ===
-A general communication framework for Multi-Robot SLAM based on Occupancy Grid merging.  
-This work was developed by Gonçalo Martins in the context of his MSc work.
+A Cooperative SLAM Framework with Efficient Information Sharing over Mobile Ad Hoc Networks.
+
+This work was developed by [Gonçalo Martins](http://ap.isr.uc.pt/?w=people_information&ID=152) in the context of his M.Sc. work:
+
+[Martins, Gonçalo S. (2014). A Cooperative SLAM Framework with Efficient Information Sharing over Mobile Ad Hoc Networks. M.Sc. Dissertation, University of Coimbra, Portugal.](http://mrl.isr.uc.pt/archive/GMartins_dissertation_final.pdf)
 
 ## Introduction
 This software solution aims to transparently enable any Single-Robot SLAM system to perform Multi-Robot SLAM. It is implemented using the [ROS](http://ros.org) cummunication framework. It is divided into five different packages.
-
-<!-- Imagem! -->
 
 To achieve our goal, this system runs on top of any existing SLAM system that conforms to ROS's usual standards for SLAM (e.g. the usage of the OccupancyGrid message to transmit occupancy grids), and enables it to communicate with nearby SLAMming robots in order to build a joint representation of the environment.
 
@@ -17,6 +18,7 @@ To achieve our goal, this system runs on top of any existing SLAM system that co
 2. You must already have a working SLAM system, since this system does not include a SLAM solution. A commonly used SLAM package is [GMapping](http://wiki.ros.org/gmapping).
 3. The map merging technique used in this system requires OpenCV. I recommend [this script](https://github.com/jayrambhia/Install-OpenCV), as described [here](https://help.ubuntu.com/community/OpenCV), to install OpenCV. All you need to do is run the dependencies.sh script followed by the opencv_latest.sh script, both contained in the Ubuntu folder.
 4. The system itself depends on a few other things, which are detailed on the setup script (mrgs_scripts/scripts/setup.sh), which brings us to...
+
 
 ### Setup
 Setting up the system is as simple as running the setup.sh bash script that exists in the scripts folder of the mrgs_scripts package. Please do not do this blindly! The script has instructions on the top, read them carefully. This script downloads and installs everything you should need in order to run this on top of your pre-existing SLAM solution. Running the script is usually accomplished by:
@@ -53,7 +55,6 @@ These steps should be taken in every robot you're going to use, including centra
 
     $roslaunch mrgs_scripts distributed_node.launch
     
-Interface is usually wlan0, eth0 or something similar, substitute wlan0 with whatever interface OLSRd is using.
 
 #### Centralized mode:
 On the central machine:
@@ -64,7 +65,6 @@ On the remaining machines:
 
     $roslaunch mrgs_scripts mapper_node.launch
     
-Same rules as before for the interface argument.
 
 #### Something else
 

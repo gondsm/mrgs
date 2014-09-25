@@ -262,7 +262,6 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
   /*sprintf(buffer,"../results/d%d.png",n);
   mapmerge::save_map_to_file(d,buffer);*/
   unsigned int roi_top_row = 0, roi_top_col = 0, roi_bottom_row = 0, roi_bottom_col = 0;
-  bool in_roi = false, known_cell = false;
   // Merge maps, this step also calculates the ROI
   for(int i = 0; i < map_final_r; i++)
   {
@@ -272,30 +271,10 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
       if(a.grid.at(i).at(j) == 255 || d.grid.at(i).at(j) == 255)
       {
         c.grid.at(i).at(j) = 255;
-        known_cell = true;
       }
       if(a.grid.at(i).at(j) == 0 || d.grid.at(i).at(j) == 0) 
       {
         c.grid.at(i).at(j) = 0;
-        known_cell = true;
-      }
-      if(known_cell == true)
-      {
-        known_cell = false;
-        if(in_roi == false)
-        {
-          in_roi = true;
-          roi_top_row = i;
-          roi_top_col = j;
-        }
-        else
-        {
-          roi_bottom_row = i;
-          if(j < roi_top_col)
-            roi_top_col = j;
-          if(j > roi_bottom_col)
-            roi_bottom_col = j;
-        }
       }
     }
   }

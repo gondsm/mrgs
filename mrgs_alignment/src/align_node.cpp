@@ -311,6 +311,10 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
   res.merged_map.header.frame_id = "/complete_map";
   res.merged_map.info.width = map_final_c;
   res.merged_map.info.height = map_final_r;
+  res.merged_map.info.origin = req.map1.info.origin;
+  res.merged_map.info.origin.position.x -= (0.5*(map_final_c - req.map1.info.width))*req.map1.info.resolution;
+  res.merged_map.info.origin.position.y -= (0.5*(map_final_r - req.map1.info.height))*req.map1.info.resolution;
+  
   k = 0;
   for(int i = 0; i < c.get_rows(); i++)
   {
@@ -343,8 +347,10 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
   res.transform1.transform.rotation.y = 0;
   res.transform1.transform.rotation.z = 0;
   res.transform1.transform.rotation.w = 1;
-  res.transform1.transform.translation.x = padding_cols * res.merged_map.info.resolution;
-  res.transform1.transform.translation.y = padding_rows * res.merged_map.info.resolution;
+  //res.transform1.transform.translation.x = padding_cols * res.merged_map.info.resolution;
+  //res.transform1.transform.translation.y = padding_rows * res.merged_map.info.resolution;
+  res.transform1.transform.translation.x = 0;
+  res.transform1.transform.translation.y = 0;
   res.transform1.transform.translation.z = 0;
   
   // From map2 to merged_map

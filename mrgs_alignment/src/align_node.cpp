@@ -232,8 +232,8 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
 
   // Translate grids to re-center:
   mapmerge::grid_map a,b;
-  mapmerge::translate_map(a, temp_a, -padding_rows, -padding_cols);
-  mapmerge::translate_map(b, temp_b, -padding_rows, -padding_cols);
+  mapmerge::translate_map(a, temp_a, -padding_cols, -padding_rows);
+  mapmerge::translate_map(b, temp_b, -padding_cols, -padding_rows);
 
   /// Call mapmerge to determine the transformation
   ROS_DEBUG("Calculating hypotheses.");
@@ -251,8 +251,10 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
   mapmerge::rotate_map(c, b, hyp[0].rotation, 127, rotx, roty);
   // DEBUG: Write first maps to disk
   /*char buffer[50];
-  sprintf(buffer,"../results/a%d.png",n);
+  sprintf(buffer,"../results/%da.png",n);
   mapmerge::save_map_to_file(a, buffer);
+  sprintf(buffer,"../results/%dtemp_a.png",n);
+  mapmerge::save_map_to_file(temp_a, buffer);
   sprintf(buffer,"../results/b%d.png",n);
   mapmerge::save_map_to_file(b,buffer);
   sprintf(buffer,"../results/c%d.png",n);
@@ -261,8 +263,8 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
   // DEBUG: Write translated map to disk
   /*sprintf(buffer,"../results/d%d.png",n);
   mapmerge::save_map_to_file(d,buffer);*/
-  unsigned int roi_top_row = 0, roi_top_col = 0, roi_bottom_row = 0, roi_bottom_col = 0;
-  // Merge maps, this step also calculates the ROI
+  
+  // Merge maps
   for(int i = 0; i < map_final_r; i++)
   {
     for(int j = 0; j < map_final_c; j++)
@@ -291,8 +293,8 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
   res.merged_map.info.width = map_final_c;
   res.merged_map.info.height = map_final_r;
   res.merged_map.info.origin = req.map1.info.origin;
-  res.merged_map.info.origin.position.x -= (0.5*(map_final_c - req.map1.info.width))*req.map1.info.resolution;
-  res.merged_map.info.origin.position.y -= (0.5*(map_final_r - req.map1.info.height))*req.map1.info.resolution;
+  res.merged_map.info.origin.position.x -= (padding_cols)*req.map1.info.resolution;
+  res.merged_map.info.origin.position.y -= (padding_rows)*req.map1.info.resolution;
   
   k = 0;
   for(int i = 0; i < c.get_rows(); i++)

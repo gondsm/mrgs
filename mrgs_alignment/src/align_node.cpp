@@ -362,9 +362,25 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
   // Merging translation
   res.transform2.transform.translation.x += hyp[0].deltax;
   res.transform2.transform.translation.y += hyp[0].deltay;*/
-  //tf::StampedTransform center_to_center, temp;
-  //temp.setIdentity();
-  //center_to_center =
+  
+  tf::Transform center_to_center, temp;
+  tf::Quaternion rotation;
+  temp.setIdentity();
+  
+  // Rotation
+  rotation.setEuler(0, 0, theta);
+  temp.setRotation(rotation);
+  center_to_center = temp*center_to_center;
+  temp.setIdentity();
+  
+  // Translation
+  temp.setOrigin(tf::Vector3(hyp[0].deltax * res.merged_map.info.resolution, -hyp[0].deltay* res.merged_map.info.resolution, 0));
+  center_to_center = temp*center_to_center;
+  
+  // Map to map
+  tf::Transform map1_to_origin, map2_to_origin;
+  
+  
   
   /// Adjust the number of hypotheses to calculate next according to this performance
   double total_time = (ros::Time::now()-init).toSec();

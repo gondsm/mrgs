@@ -61,6 +61,7 @@
 #include "ros/ros.h"
 #include "mrgs_alignment/align.h"
 #include "ros/console.h"
+#include <tf/transform_broadcaster.h>
 
 // mapmerge includes
 #include "mapmerge/grid_map.h"
@@ -338,7 +339,7 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
   // Rotation
   float deg_to_rad = 0.01745329251; // = pi/180, precalculated for performance.
   float theta = deg_to_rad * -1 * hyp[0].rotation;
-  float sin_theta = sin(theta/2);
+  /*float sin_theta = sin(theta/2);
   float cos_theta = cos(theta/2);
   float quaternion_magnitude = sqrtf(pow(sin_theta, 2) + pow(cos_theta,2));
   res.transform2.transform.rotation.x = 0;
@@ -360,7 +361,10 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
   res.transform2.transform.translation.y += (dist*sinf(theta - (hyp[0].rotation*deg_to_rad))) - (dist*sinf(theta));
   // Merging translation
   res.transform2.transform.translation.x += hyp[0].deltax;
-  res.transform2.transform.translation.y += hyp[0].deltay;
+  res.transform2.transform.translation.y += hyp[0].deltay;*/
+  //tf::StampedTransform center_to_center, temp;
+  //temp.setIdentity();
+  //center_to_center =
   
   /// Adjust the number of hypotheses to calculate next according to this performance
   double total_time = (ros::Time::now()-init).toSec();

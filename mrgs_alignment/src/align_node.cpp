@@ -368,13 +368,11 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
   tf::Quaternion rotation;
   temp.setIdentity();
   // Rotation
-  rotation.setEuler(0, 0, theta);
-  temp.setRotation(rotation);
-  center_to_center = temp*center_to_center;
-  temp.setIdentity();
+  center_to_center.setIdentity();
+  rotation.setEulerZYX(theta, 0, 0);
+  center_to_center.setRotation(rotation);
   // Translation
-  temp.setOrigin(tf::Vector3(hyp[0].deltax * res.merged_map.info.resolution, -hyp[0].deltay* res.merged_map.info.resolution, 0));
-  center_to_center = temp*center_to_center;
+  center_to_center.setOrigin(tf::Vector3(hyp[0].deltax * res.merged_map.info.resolution, -hyp[0].deltay* res.merged_map.info.resolution, 0));
   
   // Map1 to origin
   tf::Transform map1_to_origin, map2_to_origin, origin_to_center;
@@ -387,7 +385,7 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
   map2_to_origin.setOrigin(tf::Vector3(req.map2.info.origin.position.x, req.map2.info.origin.position.y, req.map2.info.origin.position.z));
   // Origin to center
   origin_to_center.setIdentity();
-  origin_to_center.setOrigin(tf::Vector3(res.merged_map.info.width/2.0, res.merged_map.info.height/2.0, 0));
+  origin_to_center.setOrigin(tf::Vector3((res.merged_map.info.width*res.merged_map.info.resolution)/2.0, (res.merged_map.info.height*res.merged_map.info.resolution)/2.0, 0));
   
   // Map to map
   tf::Transform map1_to_map2 = map1_to_origin*origin_to_center*center_to_center*origin_to_center.inverse()*map2_to_origin.inverse();

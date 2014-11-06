@@ -369,10 +369,10 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
   temp.setIdentity();
   // Rotation
   center_to_center.setIdentity();
-  rotation.setEulerZYX(-theta, 0, 0);
+  rotation.setEulerZYX(theta, 0, 0);
   center_to_center.setRotation(rotation);
   // Translation
-  center_to_center.setOrigin(tf::Vector3(hyp[0].deltax * res.merged_map.info.resolution, -hyp[0].deltay* res.merged_map.info.resolution, 0));
+  center_to_center.setOrigin(tf::Vector3(hyp[0].deltay * res.merged_map.info.resolution, -hyp[0].deltax* res.merged_map.info.resolution, 0));
   
   // Map1 to origin
   tf::Transform map1_to_origin, map2_to_origin, origin_to_center;

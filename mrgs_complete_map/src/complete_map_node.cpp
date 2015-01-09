@@ -319,7 +319,37 @@ void processForeignMaps(const mrgs_data_interface::ForeignMapVector::ConstPtr& m
   g_complete_map_pub.publish(g_aligned_maps.at(g_aligned_maps.size()-1).at(0));
   ROS_INFO("Map vector processing took %fs.", (ros::Time::now() - init).toSec()); */
 
+  /// Inform and start counting time
+  ROS_INFO("Received a foreign map vector with %d maps.", maps->map_vector.size());
+  ros::Time init = ros::Time::now();
 
+  /// We'll assume we always have to fuse
+  // Data
+  tf::Transform tf1,                        // From complete_map to map 0
+                tf2;                        // From complete_map to map 1
+  nav_msgs::OccupancyGrid fused_map;        // Will contain the fused map
+  geometry_msgs::TransformStamped ros_tf1,  // Same as above, ROS datatype
+                                  ros_tf2;  // idem
+  // Service call
+  mrgs_alignment::align srv;
+  srv.request.map1 = maps->map_vector.at(0).map;
+  srv.request.map2 = maps->map_vector.at(1).map;
+  srv.request.crop = false;
+  fused_map = srv.response.merged_map;
+  ros_tf1 = srv.response.transform1;
+  ros_tf2 = srv.response.transform2;
+
+  /// Publish stuff
+  // TF
+  mrgs_complete_map::LatestMapTF temp_latest;
+  temp_latest.id = 0;
+  temp_latest.transform = ros_tf1;
+  g_remote_tf_pub.publish(temp_latest);
+  temp_latest.id = 1;
+  temp_latest.transform = ros_tf2;
+  g_remote_tf_pub.publish(temp_latest);
+  // Map
+  g_complete_map_pub.publish(fused_map);
 
 }
 

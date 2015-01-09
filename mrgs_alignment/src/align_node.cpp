@@ -37,7 +37,7 @@
 
 /**
  * align_node
- * 
+ *
  * Summary:
  * This node receives, via ROS service, a pair of occupancy grids, and returns a single, aligned and merged, grid.
  * This node applies the algorithm developed by Stefano Carpin and presented on his papers from 2007 and 2008 (cited on
@@ -45,10 +45,10 @@
  * I've been careful to ensure that this node communicates via standard ROS datatypes, so that it is easily swapped by
  * another available map fusion technique.
  * It is important to note that the node is currently ignoring requests for cropped grids.
- * 
+ *
  * Methodology:
  *    1. Calculate how large the mapmerge grids must be in order to accomodate the incoming OccupancyGrids.
- *    2. Copy incoming grids into mapmerge grids, taking into account the padding we need to add added. We must also 
+ *    2. Copy incoming grids into mapmerge grids, taking into account the padding we need to add added. We must also
  * check for the existence of at least one occupied cell in each map, or we'll get a runtime exception.
  *    3. Feed the copied grids into the algorithm.
  *    4. Apply the suggested rotation.
@@ -82,7 +82,7 @@
 #define MRGS_LOW_PROB_THRESH 10
 #define MRGS_HIGH_PROB_THRESH 70
 
-// Number of hypothesis we calculate. The bigger this number, the better our chance to find the right transformation, 
+// Number of hypothesis we calculate. The bigger this number, the better our chance to find the right transformation,
 // and the more CPU we need.
 int g_n_hypothesis;
 int n = 0;
@@ -95,7 +95,7 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
   ROS_INFO("Received an alignment request. Alignment initiated.");
   ROS_DEBUG("Dimensions (h x w): %dx%d and %dx%d.", req.map1.info.height, req.map1.info.width,
                                                    req.map2.info.height, req.map2.info.width);
-  
+
   /// Calculate dimensioning padding
   // This ensures that both maps get input into mapmerge with the same dimensions
   int map_final_r = 0, map_final_c = 0;
@@ -146,7 +146,7 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
       map_final_c = req.map1.info.width;
     }
   }
-  
+
   // Now we add rotational padding
   // Padding prevents us from losing parts of the map when rotating and translating the maps.
   // We add padding by adding to the final dimension of the map before copying them into mapmerge datatypes.
@@ -158,7 +158,7 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
   if(padding_cols < 0) padding_cols = 0;
   map_final_r += 2*padding_rows;
   map_final_c += 2*padding_cols;
-  
+
   /// Copy maps into mapmerge datatypes
   // Transfer grid info into datatypes mapmerge can interpret
   // We'll assume values are either -1 for unknown, > MRGS_HIGH_PROB_THRESH for occupied, and < MRGS_LOW_PROB_THRES for
@@ -196,7 +196,7 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
         // Insert an unknown cell
         temp_a.grid.at(i).at(j) = 127;
       }
-      
+
       if(i < req.map2.info.height && j < req.map2.info.width)
       {
         // If (i,j) are inside the original dimensions
@@ -211,7 +211,7 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
           }
           else
             temp_b.grid.at(i).at(j) = 127;
-        
+
         // Increment linear counter
         k2++;
       }
@@ -220,14 +220,14 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
         // Insert an unknown cell
         temp_b.grid.at(i).at(j) = 127;
       }
-      
+
     }
   }
 
   // Break if there are no occupied cells
   if(!exists_occupied1 || !exists_occupied2){
     ROS_ERROR("At least one of the provided grids contain no occupied cells. Terminating.");
-    res.success_coefficient = -1; 
+    res.success_coefficient = -1;
     return true;
   }
 
@@ -243,7 +243,7 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
   // Show all hypotheses found
   for(int i = 0; i < g_n_hypothesis; i++)
     ROS_DEBUG("Hypothesis %d: ai=%f x=%d y=%d theta=%d", i, hyp[i].ai, hyp[i].deltax, hyp[i].deltay, hyp[i].rotation);
-  
+
   /// Merge maps and pack into response
   // c will contain the rotated map, d will contain the roto-translated map
   ROS_DEBUG("Applying transformation and merging.");
@@ -264,7 +264,7 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
   // DEBUG: Write translated map to disk
   /*sprintf(buffer,"../results/d%d.png",n);
   mapmerge::save_map_to_file(d,buffer);*/
-  
+
   // Merge maps
   for(int i = 0; i < map_final_r; i++)
   {
@@ -275,17 +275,17 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
       {
         c.grid.at(i).at(j) = 255;
       }
-      if(a.grid.at(i).at(j) == 0 || d.grid.at(i).at(j) == 0) 
+      if(a.grid.at(i).at(j) == 0 || d.grid.at(i).at(j) == 0)
       {
         c.grid.at(i).at(j) = 0;
       }
     }
   }
-  
+
   // DEBUG: Write final map to disk
   /*sprintf(buffer,"../results/final%d.png",n);
   mapmerge::save_map_to_file(c, buffer);*/
-  
+
   // Pack results into response message
   ROS_DEBUG("Packing results into response.");
   res.merged_map.data.resize(map_final_r*map_final_c);
@@ -296,7 +296,7 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
   res.merged_map.info.origin = req.map1.info.origin;
   res.merged_map.info.origin.position.x -= (padding_cols)*req.map1.info.resolution;
   res.merged_map.info.origin.position.y -= (padding_rows)*req.map1.info.resolution;
-  
+
   k = 0;
   for(int i = 0; i < c.get_rows(); i++)
   {
@@ -321,7 +321,7 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
     }
   }
   res.success_coefficient = hyp[0].ai;
-  
+
   /// Calculate transformations
   ROS_DEBUG("Calculating and packing transforms.");
   // From map1 to merged_map
@@ -334,7 +334,7 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
   res.transform1.transform.translation.x = 0;
   res.transform1.transform.translation.y = 0;
   res.transform1.transform.translation.z = 0;
-  
+
   // From map2 to merged_map
   // Rotation
   float deg_to_rad = 0.01745329251; // = pi/180, precalculated for performance.
@@ -349,9 +349,9 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
   // Padding translation
   res.transform2.transform.translation.x = padding_cols * res.merged_map.info.resolution;
   res.transform2.transform.translation.y = padding_rows * res.merged_map.info.resolution;
-  res.transform2.transform.translation.z = 0; 
+  res.transform2.transform.translation.z = 0;
   // Rotational translation (these equations should be explained somewhere)
-  // Basically, since we are rotating from the center, we introduce an extra translation on the corner that is 
+  // Basically, since we are rotating from the center, we introduce an extra translation on the corner that is
   // calculated through these equations.
   float half_h = (map_final_r/2.0) * res.merged_map.info.resolution;
   float half_w = (map_final_c/2.0) * res.merged_map.info.resolution;
@@ -362,18 +362,18 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
   // Merging translation
   res.transform2.transform.translation.x += hyp[0].deltax;
   res.transform2.transform.translation.y += hyp[0].deltay;*/
-  
+
   // Center to center
   tf::Transform center_to_center, temp;
   tf::Quaternion rotation;
   temp.setIdentity();
   // Rotation
   center_to_center.setIdentity();
-  rotation.setEulerZYX(theta, 0, 0);
+  rotation.setRPY(0, 0, theta);
   center_to_center.setRotation(rotation);
   // Translation
   center_to_center.setOrigin(tf::Vector3(hyp[0].deltay * res.merged_map.info.resolution, -hyp[0].deltax* res.merged_map.info.resolution, 0));
-  
+
   // Map1 to origin
   tf::Transform map1_to_origin, map2_to_origin, origin_to_center;
   tf::quaternionMsgToTF(req.map1.info.origin.orientation, rotation);
@@ -386,15 +386,15 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
   // Origin to center
   origin_to_center.setIdentity();
   origin_to_center.setOrigin(tf::Vector3((res.merged_map.info.width*res.merged_map.info.resolution)/2.0, (res.merged_map.info.height*res.merged_map.info.resolution)/2.0, 0));
-  
+
   // Map to map
   tf::Transform map1_to_map2 = map1_to_origin*origin_to_center*center_to_center*origin_to_center.inverse()*map2_to_origin.inverse();
-  
+
   // Pack into response
   tf::StampedTransform stamped(map1_to_map2, ros::Time::now(), "foo", "bar");
   tf::transformStampedTFToMsg(stamped, res.transform2);
-  
-  
+
+
   /// Adjust the number of hypotheses to calculate next according to this performance
   double total_time = (ros::Time::now()-init).toSec();
   ROS_INFO("Total service time was %fs.", total_time);
@@ -413,8 +413,8 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
   {
     g_n_hypothesis++;
     ROS_INFO("Merging took less than 2 seconds. Incrementing the number of hypotheses to %d.", g_n_hypothesis);
-  }  
-  
+  }
+
   /// Successfully return
   return true;
 }
@@ -425,7 +425,7 @@ int main(int argc, char **argv)
   ros::init(argc, argv, "align_node");
   ros::NodeHandle n;
   ros::ServiceServer service = n.advertiseService("align", align);
-  
+
   /// Calibration
   mapmerge::grid_map a,b;
   if(a.load_map(800,800,"../calibration/intel.txt")==1 || b.load_map(800,800,"../calibration/intel90.txt")==1)

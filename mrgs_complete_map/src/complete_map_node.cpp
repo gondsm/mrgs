@@ -35,23 +35,23 @@
 * Author: Gonçalo S. Martins, 2014
 *********************************************************************/
 
-/** 
+/**
  * complete_map_node
- * 
+ *
  * Summary:
  * This node is responsible for processing a vector containing all the latest maps we've acquired from the local and
  * remote robots.
  * It receives a vector containing all the latest maps, even the repeated ones (so that the vector always contains the
  * latest map from each robot). Then it uses timestamps to determine which parts of the map tree need to be rebuilt, if
  * any.
- * 
+ *
  * Methodology:
  *  1. Receive maps;
  *  2. Build a tree-like structure for storing and updating merged maps, and another for transforms;
  *  3. Send maps two by two to be aligned as needed. Merged maps and transforms are stored in their respective trees;
  *  4. Calculate and publish the complete_map to map transformations for each robot in the team;
  *  5. Publish the complete map.
- * 
+ *
  */
 // ROS includes
 #include "ros/ros.h"
@@ -59,6 +59,7 @@
 #include "mrgs_data_interface/ForeignMapVector.h"
 #include "mrgs_complete_map/LatestMapTF.h"
 #include "geometry_msgs/TransformStamped.h"
+#include <tf/transform_broadcaster.h>
 #include <cstdlib>
 
 // Global variables
@@ -92,11 +93,11 @@ inline geometry_msgs::Quaternion multiplyQuaternion(geometry_msgs::Quaternion q1
 
 void processForeignMaps(const mrgs_data_interface::ForeignMapVector::ConstPtr& maps)
 {
-  /// Inform and start counting time
+  /*/// Inform and start counting time
   ROS_INFO("Received a foreign map vector with %d maps.", maps->map_vector.size());
   g_is_dirty.clear(); // This variable will later become local.
   ros::Time init = ros::Time::now();
-  
+
   /// Allocate dirtiness matrix
   ROS_DEBUG("Allocating dirtiness matrix...");
   // Allocate first row
@@ -114,7 +115,7 @@ void processForeignMaps(const mrgs_data_interface::ForeignMapVector::ConstPtr& m
     ROS_DEBUG("Allocated a new row with %d elements.", curr_n);
   }while(g_is_dirty.at(i).size() > 1);
   ROS_DEBUG("Allocated %d new rows.", i);
-  
+
   /// Expand aligned map matrix (if needed)
   // This methodology is a bit wasteful, but will rarely be used, so it's passable.
   ROS_DEBUG("Allocating map and transform matrix.");
@@ -144,7 +145,7 @@ void processForeignMaps(const mrgs_data_interface::ForeignMapVector::ConstPtr& m
       g_transforms.at(i).push_back(empty_transform);
     }
   }
-  
+
   /// Check if the received maps have updates and mark as dirty accordingly
   ROS_DEBUG("Marking updates.");
   if(g_latest_map_times.size()==0)
@@ -172,7 +173,7 @@ void processForeignMaps(const mrgs_data_interface::ForeignMapVector::ConstPtr& m
         g_is_dirty.at(0).at(i) = false;
     }
   }
-  
+
   /// Renew our latest map times
   ROS_DEBUG("Updating map times.");
   g_latest_map_times.clear();
@@ -181,7 +182,7 @@ void processForeignMaps(const mrgs_data_interface::ForeignMapVector::ConstPtr& m
     g_latest_map_times.push_back(maps->map_vector.at(i).map.header.stamp);
 
   /// (Re-)Build maps
-  // Iterate through the dirtiness matrix, starting in row 1 (not 0), and rebuild 
+  // Iterate through the dirtiness matrix, starting in row 1 (not 0), and rebuild
   // all maps which depend on a "dirty" map. Newly-built maps are also marked as "dirty".
   // This process is repeated until we only have a single map to build, which will be our final map.
   ROS_DEBUG("Rebuilding necessary maps.");
@@ -274,7 +275,7 @@ void processForeignMaps(const mrgs_data_interface::ForeignMapVector::ConstPtr& m
       }
     }
   }
-  
+
   /// Recaltulate and publish all our complete_map to map transformations
   // Iterate through every map and calculate its transform
   ROS_DEBUG("Calculating transforms.");
@@ -302,7 +303,7 @@ void processForeignMaps(const mrgs_data_interface::ForeignMapVector::ConstPtr& m
       temp_transform.transform.translation.z += g_transforms.at(j).at(i/pow(2, j)).transform.translation.z;
       temp_transform.transform.rotation = multiplyQuaternion(temp_transform.transform.rotation, g_transforms.at(j).at(i/pow(2, j)).transform.rotation);
     }
-    
+
     // Publish it
     ROS_DEBUG("Publishing transform for robot %d.", i);
     mrgs_complete_map::LatestMapTF temp_latest;
@@ -310,13 +311,16 @@ void processForeignMaps(const mrgs_data_interface::ForeignMapVector::ConstPtr& m
     temp_latest.transform = temp_transform;
     g_remote_tf_pub.publish(temp_latest);
   }
-  
+
   /// Publish our new, shiny, complete map and report performance
   // Use a latched topic, so that the last map is accessible to new subscribers.
   ROS_DEBUG("Publishing new complete map.");
   g_aligned_maps.at(g_aligned_maps.size()-1).at(0).header.frame_id = "complete_map";
   g_complete_map_pub.publish(g_aligned_maps.at(g_aligned_maps.size()-1).at(0));
-  ROS_INFO("Map vector processing took %fs.", (ros::Time::now() - init).toSec());
+  ROS_INFO("Map vector processing took %fs.", (ros::Time::now() - init).toSec()); */
+
+
+
 }
 
 int main(int argc, char **argv)
@@ -329,7 +333,7 @@ int main(int argc, char **argv)
   ros::Subscriber sub2 = n.subscribe("mrgs/foreign_maps", 1, processForeignMaps);
   g_complete_map_pub = n.advertise<nav_msgs::OccupancyGrid>("mrgs/complete_map", 10);
   g_remote_tf_pub = n.advertise<mrgs_complete_map::LatestMapTF>("mrgs/remote_tf", 10);
-  
+
   // ROS loop
   ros::spin();
 

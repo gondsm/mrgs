@@ -35,12 +35,12 @@
 * Author: Gonçalo S. Martins, 2014
 *********************************************************************/
 
-/** 
+/**
  * remote_nav_node
- * 
+ *
  * Summary:
  * This node ensures that TFs and poses are published into the internal network at the correct rates and without delay.
- * 
+ *
  * Methodology:
  * This node is responsible for publishing the following data:
  * -> complete_map to local map (from each robot) TFs;
@@ -65,30 +65,30 @@ class RemoteNav{
   void processTF(const mrgs_complete_map::LatestMapTF::ConstPtr& remote_transform)
   {
     // Add the received transform to the vector.
-    ROS_INFO("Processing new complete_map to map transform.");  
+    ROS_INFO("Processing new complete_map to map transform.");
     while(map_transform_vector.size() < remote_transform->id+1)
       map_transform_vector.push_back(NULL);
-    
+
     // Copy received transform to temporary variable
     tf::StampedTransform new_transform;
     tf::transformStampedMsgToTF(remote_transform->transform, new_transform);
-    
+
     // Copy from temp to vector
-    map_transform_vector.at(remote_transform->id) = new tf::Transform(new_transform.inverse());
-    
+    map_transform_vector.at(remote_transform->id) = new tf::Transform(new_transform);
+
   }
   // Method that processes remote map to base_link transforms
   void processPose(const mrgs_data_interface::LatestRobotPose::ConstPtr& remote_pose)
   {
     // Add the received transform to the vector.
-    ROS_INFO("Processing new map to base_link transform.");  
+    ROS_INFO("Processing new map to base_link transform.");
     while(base_transform_vector.size() < remote_pose->id+1)
       base_transform_vector.push_back(NULL);
-    
+
     // Copy received transform to temporary variable
     tf::StampedTransform new_transform;
     tf::transformStampedMsgToTF(remote_pose->transform, new_transform);
-    
+
     // Copy from temp to vector
     base_transform_vector.at(remote_pose->id) = new tf::Transform(new_transform);
   }
@@ -111,7 +111,7 @@ class RemoteNav{
   void broadcastData()
   {
     //    Iterate through the various vectors, publishing data in the correct
-    //    TF frames. 
+    //    TF frames.
     char frame[30];
     char child_frame[30];
     for(int i = 0; i < map_transform_vector.size(); i++)
@@ -129,7 +129,7 @@ class RemoteNav{
         broadcaster.sendTransform(tf::StampedTransform(*map_transform_vector.at(i), ros::Time::now(), frame, child_frame));
       }
     }
-    
+
     for(int i = first_foreign_robot; i < base_transform_vector.size(); i++)
     {
       sprintf(frame, "/robot_%d/map", i);
@@ -140,7 +140,7 @@ class RemoteNav{
       }
     }
   }
-  
+
   private:
   // Holds all current complete_map to map transforms
   std::vector<tf::Transform*> map_transform_vector;
@@ -163,7 +163,7 @@ int main(int argc, char **argv)
   ros::init(argc, argv, "remote_nav_node");
   ros::NodeHandle n;
   RemoteNav nav(&n);
-  
+
   // ROS loop
   //ros::spin();
   ros::Rate r(10);

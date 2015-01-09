@@ -59,7 +59,6 @@
 #include "mrgs_data_interface/ForeignMapVector.h"
 #include "mrgs_complete_map/LatestMapTF.h"
 #include "geometry_msgs/TransformStamped.h"
-#include <tf/transform_broadcaster.h>
 #include <cstdlib>
 
 // Global variables
@@ -93,7 +92,7 @@ inline geometry_msgs::Quaternion multiplyQuaternion(geometry_msgs::Quaternion q1
 
 void processForeignMaps(const mrgs_data_interface::ForeignMapVector::ConstPtr& maps)
 {
-  /*/// Inform and start counting time
+  /// Inform and start counting time
   ROS_INFO("Received a foreign map vector with %d maps.", maps->map_vector.size());
   g_is_dirty.clear(); // This variable will later become local.
   ros::Time init = ros::Time::now();
@@ -317,58 +316,7 @@ void processForeignMaps(const mrgs_data_interface::ForeignMapVector::ConstPtr& m
   ROS_DEBUG("Publishing new complete map.");
   g_aligned_maps.at(g_aligned_maps.size()-1).at(0).header.frame_id = "complete_map";
   g_complete_map_pub.publish(g_aligned_maps.at(g_aligned_maps.size()-1).at(0));
-  ROS_INFO("Map vector processing took %fs.", (ros::Time::now() - init).toSec()); */
-
-  /// Inform and start counting time
-  ROS_INFO("Received a foreign map vector with %d maps.", maps->map_vector.size());
-  ros::Time init = ros::Time::now();
-
-  /// We'll assume we always have to fuse
-  // Data
-  tf::Transform tf1,                        // From complete_map to map 0
-                tf2;                        // From complete_map to map 1
-  nav_msgs::OccupancyGrid fused_map;        // Will contain the fused map
-  geometry_msgs::TransformStamped ros_tf1,  // Same as above, ROS datatype
-                                  ros_tf2;  // idem
-  // Service call
-  mrgs_alignment::align srv;
-  srv.request.map1 = maps->map_vector.at(0).map;
-  srv.request.map2 = maps->map_vector.at(1).map;
-  srv.request.crop = false;
-  if(!g_client.call(srv))
-  {
-    ROS_ERROR("Error calling service! Aborting operation!");
-    return;
-  }
-  fused_map = srv.response.merged_map;
-  ros_tf1 = srv.response.transform1;
-  ros_tf2 = srv.response.transform2;
-
-  /// DEBUG: print stuff
-  //ROS_INFO("tf1: \nx = %f\ny = %f\nz = %f\nw = %f\n", ros_tf1.transform.translation.x, ros_tf1.transform.translation.y, ros_tf1.transform.translation.z, ros_tf1.transform.rotation.w);
-
-  /// Publish stuff
-  // TF
-  // tf1
-  mrgs_complete_map::LatestMapTF temp_latest;
-  temp_latest.id = 0;
-  temp_latest.transform = ros_tf1;
-  temp_latest.transform.header.frame_id = std::string(std::string("robot_") + std::string("0") + std::string("/map"));
-  temp_latest.transform.child_frame_id = "complete_map";
-  temp_latest.transform.header.stamp = ros::Time::now();
-  g_remote_tf_pub.publish(temp_latest);
-
-  // tf2
-  temp_latest.id = 1;
-  temp_latest.transform = ros_tf2;
-  temp_latest.transform.header.frame_id = std::string(std::string("robot_") + std::string("1") + std::string("/map"));
-  temp_latest.transform.child_frame_id = "complete_map";
-  temp_latest.transform.header.stamp = ros::Time::now();
-  g_remote_tf_pub.publish(temp_latest);
-
-  // Map
-  g_complete_map_pub.publish(fused_map);
-
+  ROS_INFO("Map vector processing took %fs.", (ros::Time::now() - init).toSec());
 }
 
 int main(int argc, char **argv)

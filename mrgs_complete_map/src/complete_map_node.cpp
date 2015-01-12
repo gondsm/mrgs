@@ -60,6 +60,7 @@
 #include "mrgs_complete_map/LatestMapTF.h"
 #include "geometry_msgs/TransformStamped.h"
 #include <cstdlib>
+#include "tf/transform_datatypes.h"
 
 // Global variables
 // Node state:
@@ -79,7 +80,7 @@ ros::ServiceClient g_client;
 ros::Publisher g_complete_map_pub;
 ros::Publisher g_remote_tf_pub;
 
-inline geometry_msgs::Quaternion multiplyQuaternion(geometry_msgs::Quaternion q1, geometry_msgs::Quaternion q2)
+/*inline geometry_msgs::Quaternion multiplyQuaternion(geometry_msgs::Quaternion q1, geometry_msgs::Quaternion q2)
 {
   // This function multiplies two quaternions, to assist in transform calculation.
   geometry_msgs::Quaternion q3;
@@ -88,7 +89,7 @@ inline geometry_msgs::Quaternion multiplyQuaternion(geometry_msgs::Quaternion q1
   q3.y = (q1.w*q2.y - q1.x*q2.z + q1.y*q2.w + q1.z*q2.x);
   q3.z = (q1.w*q2.z + q1.x*q2.y - q1.y*q2.x + q1.z*q2.w);
   return q3;
-}
+}*/
 
 void processForeignMaps(const mrgs_data_interface::ForeignMapVector::ConstPtr& maps)
 {
@@ -276,33 +277,44 @@ void processForeignMaps(const mrgs_data_interface::ForeignMapVector::ConstPtr& m
   }
 
   /// Recaltulate and publish all our complete_map to map transformations
-  // Iterate through every map and calculate its transform
+  // Iterate through every map and calculate its transform, by "climbing" the
+  // transfor tree. Before packing the transform into a message, we invert it,
+  // since we are looking for the transform "complete_map -> robot_i/map" and
+  // what we calculate by climbing the tree is its inverse.
   ROS_DEBUG("Calculating transforms.");
   for(int i = 0; i < g_latest_map_times.size(); i++)
   {
     // Calculate transform
     ROS_DEBUG("Calculating transform for robot %d.", i);
+    tf::StampedTransform temp_TF, aux_TF;
     geometry_msgs::TransformStamped temp_transform;
     char buffer[10];
     sprintf(buffer, "%d", i);
-    temp_transform.header.frame_id = std::string(std::string("robot_") + std::string(buffer) + std::string("/map"));
-    temp_transform.child_frame_id = "complete_map";
-    temp_transform.header.stamp = ros::Time::now();
-    temp_transform.transform.translation.x = g_transforms.at(0).at(i).transform.translation.x;
+
+    tf::transformStampedMsgToTF(g_transforms.at(0).at(i), temp_TF);
+    /*temp_transform.transform.translation.x = g_transforms.at(0).at(i).transform.translation.x;
     temp_transform.transform.translation.y = g_transforms.at(0).at(i).transform.translation.y;
     temp_transform.transform.translation.z = g_transforms.at(0).at(i).transform.translation.z;
     temp_transform.transform.rotation.x = g_transforms.at(0).at(i).transform.rotation.x;
     temp_transform.transform.rotation.y = g_transforms.at(0).at(i).transform.rotation.y;
     temp_transform.transform.rotation.z = g_transforms.at(0).at(i).transform.rotation.z;
-    temp_transform.transform.rotation.w = g_transforms.at(0).at(i).transform.rotation.w;
+    temp_transform.transform.rotation.w = g_transforms.at(0).at(i).transform.rotation.w;*/
     for(int j = 1; j < g_transforms.size(); j++)
     {
-      temp_transform.transform.translation.x += g_transforms.at(j).at(i/pow(2, j)).transform.translation.x;
+      /*temp_transform.transform.translation.x += g_transforms.at(j).at(i/pow(2, j)).transform.translation.x;
       temp_transform.transform.translation.y += g_transforms.at(j).at(i/pow(2, j)).transform.translation.y;
       temp_transform.transform.translation.z += g_transforms.at(j).at(i/pow(2, j)).transform.translation.z;
       temp_transform.transform.rotation = multiplyQuaternion(temp_transform.transform.rotation, g_transforms.at(j).at(i/pow(2, j)).transform.rotation);
+      */
+      tf::transformStampedMsgToTF(g_transforms.at(j).at(i/pow(2, j)), aux_TF);
+      temp_TF *= aux_TF;
     }
 
+    // Pack into message
+    tf::transformStampedTFToMsg(tf::StampedTransform(temp_TF.inverse(), ros::Time::now(), "complete_map", std::string(std::string("robot_") + std::string(buffer) + std::string("/map"))), temp_transform);
+    temp_transform.header.frame_id = "complete_map";
+    temp_transform.child_frame_id = std::string(std::string("robot_") + std::string(buffer) + std::string("/map"));
+    temp_transform.header.stamp = ros::Time::now();
     // Publish it
     ROS_DEBUG("Publishing transform for robot %d.", i);
     mrgs_complete_map::LatestMapTF temp_latest;

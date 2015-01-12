@@ -339,29 +339,6 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
   // Rotation
   float deg_to_rad = 0.01745329251; // = pi/180, precalculated for performance.
   float theta = deg_to_rad * -1 * hyp[0].rotation;
-  /*float sin_theta = sin(theta/2);
-  float cos_theta = cos(theta/2);
-  float quaternion_magnitude = sqrtf(pow(sin_theta, 2) + pow(cos_theta,2));
-  res.transform2.transform.rotation.x = 0;
-  res.transform2.transform.rotation.y = 0;
-  res.transform2.transform.rotation.z = cos_theta/quaternion_magnitude;
-  res.transform2.transform.rotation.w = sin_theta/quaternion_magnitude;
-  // Padding translation
-  res.transform2.transform.translation.x = padding_cols * res.merged_map.info.resolution;
-  res.transform2.transform.translation.y = padding_rows * res.merged_map.info.resolution;
-  res.transform2.transform.translation.z = 0;
-  // Rotational translation (these equations should be explained somewhere)
-  // Basically, since we are rotating from the center, we introduce an extra translation on the corner that is
-  // calculated through these equations.
-  float half_h = (map_final_r/2.0) * res.merged_map.info.resolution;
-  float half_w = (map_final_c/2.0) * res.merged_map.info.resolution;
-  theta = M_PI - atan(half_h/half_w);
-  float dist = sqrt(pow(half_h, 2) + pow(half_w, 2));
-  res.transform2.transform.translation.x += (dist*cosf(theta - (hyp[0].rotation*deg_to_rad))) - (dist*cosf(theta));
-  res.transform2.transform.translation.y += (dist*sinf(theta - (hyp[0].rotation*deg_to_rad))) - (dist*sinf(theta));
-  // Merging translation
-  res.transform2.transform.translation.x += hyp[0].deltax;
-  res.transform2.transform.translation.y += hyp[0].deltay;*/
 
   // Center to center
   tf::Transform center_to_center, temp;

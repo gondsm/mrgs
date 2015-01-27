@@ -244,7 +244,7 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
 
 
   /// DEBUG
-  //hyp[0].rotation = 0;
+  hyp[0].rotation = 0;
   //hyp[0].deltax = 0;
   //hyp[0].deltay = 0;
 

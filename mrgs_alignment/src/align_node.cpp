@@ -62,6 +62,7 @@
 #include "mrgs_alignment/align.h"
 #include "ros/console.h"
 #include <tf/transform_broadcaster.h>
+#include "geometry_msgs/PoseStamped.h"
 
 // mapmerge includes
 #include "mapmerge/grid_map.h"
@@ -86,6 +87,9 @@
 // and the more CPU we need.
 int g_n_hypothesis;
 int n = 0;
+
+// DEBUG: Pose publisher
+ros::Publisher pose_publisher;
 
 bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response &res)
 {
@@ -151,15 +155,15 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
   // Padding prevents us from losing parts of the map when rotating and translating the maps.
   // We add padding by adding to the final dimension of the map before copying them into mapmerge datatypes.
   // This step is necessary since we are assuming all the maps we receive have been cropped by the map dam node.
-  /*int maximum_distance = ceil(sqrt((pow(map_final_r/2.0,2))+(pow(map_final_c/2.0,2))));
+  int maximum_distance = ceil(sqrt((pow(map_final_r/2.0,2))+(pow(map_final_c/2.0,2))));
   int padding_rows = maximum_distance - ceil(map_final_r/2.0);
   int padding_cols = maximum_distance - ceil(map_final_c/2.0);
   if(padding_rows < 0) padding_rows = 0;
   if(padding_cols < 0) padding_cols = 0;
   map_final_r += 2*padding_rows;
-  map_final_c += 2*padding_cols;*/
-  int padding_rows = 0;
-  int padding_cols = 0;
+  map_final_c += 2*padding_cols;
+  //int padding_rows = 0;
+  //int padding_cols = 0;
 
   /// Copy maps into mapmerge datatypes
   // Transfer grid info into datatypes mapmerge can interpret
@@ -244,7 +248,7 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
 
 
   /// DEBUG
-  hyp[0].rotation = 0;
+  //hyp[0].rotation = 0;
   //hyp[0].deltax = 0;
   //hyp[0].deltay = 0;
 
@@ -349,9 +353,9 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
   float theta = deg_to_rad * -1 * hyp[0].rotation;
 
   // Center to center
-  tf::Transform center_to_center, temp;
+  tf::Transform center_to_center;
   tf::Quaternion rotation;
-  temp.setIdentity();
+
   // Rotation
   center_to_center.setIdentity();
   rotation.setRPY(0, 0, theta);
@@ -364,11 +368,11 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
   tf::Transform map1_to_origin, map2_to_origin, origin_to_center;
   tf::quaternionMsgToTF(req.map1.info.origin.orientation, rotation);
   map1_to_origin.setRotation(rotation);
-  map1_to_origin.setOrigin(tf::Vector3(-req.map1.info.origin.position.x, -req.map1.info.origin.position.y, req.map1.info.origin.position.z));
+  map1_to_origin.setOrigin(tf::Vector3(req.map1.info.origin.position.x, req.map1.info.origin.position.y, req.map1.info.origin.position.z));
   // Map2 to origin
   tf::quaternionMsgToTF(req.map2.info.origin.orientation, rotation);
   map2_to_origin.setRotation(rotation);
-  map2_to_origin.setOrigin(tf::Vector3(-req.map2.info.origin.position.x, -req.map2.info.origin.position.y, req.map2.info.origin.position.z));
+  map2_to_origin.setOrigin(tf::Vector3(req.map2.info.origin.position.x, req.map2.info.origin.position.y, req.map2.info.origin.position.z));
   // Origin to center
   origin_to_center.setIdentity();
   origin_to_center.setOrigin(tf::Vector3((res.merged_map.info.width*res.merged_map.info.resolution)/2.0, (res.merged_map.info.height*res.merged_map.info.resolution)/2.0, 0));
@@ -377,15 +381,21 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
   //tf::Transform map1_to_map2 = map1_to_origin*origin_to_center*center_to_center*origin_to_center.inverse()*map2_to_origin.inverse();
   tf::Transform map1_to_map2;
   map1_to_map2.setIdentity();
-  map1_to_map2 *= map2_to_origin.inverse();
-  map1_to_map2 *= origin_to_center.inverse();
-  map1_to_map2 *= center_to_center;
-  map1_to_map2 *= origin_to_center;
   map1_to_map2 *= map1_to_origin;
+  map1_to_map2 *= origin_to_center;
+  map1_to_map2 *= center_to_center;
+  map1_to_map2 *= origin_to_center.inverse();
+  map1_to_map2 *= map2_to_origin.inverse();
 
   // Pack into response
-  tf::StampedTransform stamped(map1_to_map2, ros::Time::now(), "foo", "bar");
+  tf::StampedTransform stamped(map1_to_map2.inverse(), ros::Time::now(), "foo", "bar");
   tf::transformStampedTFToMsg(stamped, res.transform2);
+
+  // DEBUG: Show origins
+  geometry_msgs::PoseStamped debug_pose;
+  debug_pose.pose = req.map2.info.origin;
+  debug_pose.header.frame_id = std::string("/robot_1/map");
+  //pose_publisher.publish(debug_pose);
 
 
   /// Adjust the number of hypotheses to calculate next according to this performance
@@ -418,6 +428,9 @@ int main(int argc, char **argv)
   ros::init(argc, argv, "align_node");
   ros::NodeHandle n;
   ros::ServiceServer service = n.advertiseService("align", align);
+
+  // DEBUG: initialize pose publisher
+  pose_publisher = n.advertise<geometry_msgs::PoseStamped>("/map_1_origin", 10);
 
   /// Calibration
   mapmerge::grid_map a,b;

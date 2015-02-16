@@ -80,8 +80,9 @@ void processForeignMaps(const mrgs_data_interface::ForeignMapVector::ConstPtr& m
   mrgs_alignment::align srv;
   srv.request.map1 = maps->map_vector.at(0).map;
   srv.request.map2 = maps->map_vector.at(1).map;
+  g_client.call(srv);
 
-  // Publish the maps and tfs
+  // Publish tfs
   mrgs_complete_map::LatestMapTF temp_latest;
   temp_latest.transform = srv.response.transform1;
   temp_latest.id = 0;
@@ -89,6 +90,12 @@ void processForeignMaps(const mrgs_data_interface::ForeignMapVector::ConstPtr& m
   temp_latest.transform = srv.response.transform2;
   temp_latest.id = 1;
   g_remote_tf_pub.publish(temp_latest);
+
+  // Publish foreign maps
+  nav_msgs::OccupancyGrid temp_map;
+  temp_map = maps->map_vector.at(1).map;
+  temp_map.header.frame_id = "/robot_1/map";
+  g_foreign_map_pub.publish(temp_map);
 
   // Inform
   ROS_INFO("Map vector processing took %fs.", (ros::Time::now() - init).toSec());

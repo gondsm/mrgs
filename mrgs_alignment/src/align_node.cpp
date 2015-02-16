@@ -395,7 +395,7 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
   map1_to_map2 *= map2_to_origin.inverse();
 
   // Pack into response
-  tf::StampedTransform stamped(map1_to_map2.inverse(), ros::Time::now(), "foo", "bar");
+  tf::StampedTransform stamped(map1_to_map2, ros::Time::now(), "foo", "bar");
   tf::transformStampedTFToMsg(stamped, res.transform2);
 
   // DEBUG: Show origins

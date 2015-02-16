@@ -10,5 +10,6 @@
     <arg name="interface" value="$(arg interface)"/>
     <arg name="is_centralized" value="false"/>
     <arg name="launch_rviz" value="false"/>
+    <arg name="alt_mode" value="false"/>
   </include>
 </launch>

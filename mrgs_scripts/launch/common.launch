@@ -14,26 +14,28 @@
   <arg name="interface"/>
   <arg name="is_centralized"/>
   <arg name="launch_rviz"/>
+  <arg name="alt_mode"/>
 
   <!-- Parameters -->
   <param name="is_centralized" value="$(arg is_centralized)" />
   <param name="interface" value="$(arg interface)" />
   <param name="is_transmitter" value="false" />
-  
+
   <!-- mrgs -->
   <!-- wifi_comm node -->
   <node name="wifi_discovery_node" pkg="wifi_comm" type="wifi_discovery_node" />
   <!-- mrgs_data_interface node-->
   <node name="data_interface_node" pkg="mrgs_data_interface" type="data_interface_node" output="screen"/>
   <!-- mrgs_complete_map node -->
-  <node name="complete_map_node" pkg="mrgs_complete_map" type="complete_map_node" output="screen"/>
+  <node name="complete_map_node" pkg="mrgs_complete_map" type="complete_map_node" output="screen" unless="$(arg alt_mode)"/>
+  <node name="complete_map_node_alt" pkg="mrgs_complete_map" type="complete_map_node_alt" output="screen" if="$(arg alt_mode)"/>
   <!-- mrgs_alignment node -->
   <node name="align_node" pkg="mrgs_alignment" type="align_node" output="screen" cwd="node"/>
   <!-- remote_nav node -->
-  <node name="remote_nav_node" pkg="mrgs_auxiliary_nodes" type="remote_nav_node" output="screen"/>  
+  <node name="remote_nav_node" pkg="mrgs_auxiliary_nodes" type="remote_nav_node" output="screen"/>
   <!-- dam node -->
   <node name="map_dam_node" pkg="mrgs_auxiliary_nodes" type="map_dam_node" output="screen" unless="$(arg is_centralized)"/>
-  
+
   <!-- Rviz -->
   <node name="rviz" pkg="rviz" type="rviz" args="-d $(find mrgs_scripts)/rviz/only_map.vcg" if="$(arg launch_rviz)" />
 

@@ -1,14 +1,18 @@
 <!--
   This file takes care of launching the a node of the centralized system.
+  This launches a system running the alternative complete_map_node that does
+  not publish a complete map, but instead publishes a set of TFs and the original
+  maps, that can then be shown superimposed on RVIZ.
   Arguments are:
     interface: the network interface the system will use to communicate;
 -->
 
 <launch>
   <arg name="interface" default="$(optenv MRGS_INTERFACE)"/>
-  <include file="$(find mrgs_scripts)/launch/common_alt.launch">
+  <include file="$(find mrgs_scripts)/launch/common.launch">
     <arg name="interface" value="$(arg interface)"/>
     <arg name="is_centralized" value="false"/>
     <arg name="launch_rviz" value="false"/>
+    <arg name="alt_mode" value="true"/>
   </include>
 </launch>

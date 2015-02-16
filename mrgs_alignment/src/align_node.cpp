@@ -334,6 +334,12 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
   }
   res.success_coefficient = hyp[0].ai;
 
+  /// Compensate origin translation due to padding
+  req.map1.info.origin.position.x -= (padding_cols)*req.map1.info.resolution;
+  req.map1.info.origin.position.y -= (padding_rows)*req.map1.info.resolution;
+  req.map2.info.origin.position.x -= (padding_cols)*req.map1.info.resolution;
+  req.map2.info.origin.position.y -= (padding_rows)*req.map1.info.resolution;
+
   /// Calculate transformations
   ROS_DEBUG("Calculating and packing transforms.");
   // From map1 to merged_map

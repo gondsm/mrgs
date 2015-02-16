@@ -62,12 +62,18 @@
 #include <cstdlib>
 #include "tf/transform_datatypes.h"
 
+// Keeps the timestamps of the latest maps, so that when a new vector is received,
+// only the necessary maps are re-aligned.
+// To be edited only by the /foreign_maps callback
+std::vector<ros::Time> g_latest_map_times;
+
 // ROS facilities:
 // To allow calls to service from callbacks
 ros::ServiceClient g_client;
 // To allow publishing from callbacks
 ros::Publisher g_remote_tf_pub;
 ros::Publisher g_foreign_map_pub;
+ros::Publisher g_foreign_map_pub2;
 
 
 void processForeignMaps(const mrgs_data_interface::ForeignMapVector::ConstPtr& maps)
@@ -76,26 +82,67 @@ void processForeignMaps(const mrgs_data_interface::ForeignMapVector::ConstPtr& m
   ROS_INFO("Received a foreign map vector with %d maps.", maps->map_vector.size());
   ros::Time init = ros::Time::now();
 
-  // Fuse the two maps and get the tfs
-  mrgs_alignment::align srv;
-  srv.request.map1 = maps->map_vector.at(0).map;
-  srv.request.map2 = maps->map_vector.at(1).map;
-  g_client.call(srv);
+  if(maps->map_vector.size() == 2)
+  {
+    // Fuse the two maps and get the tfs
+    mrgs_alignment::align srv;
+    srv.request.map1 = maps->map_vector.at(0).map;
+    srv.request.map2 = maps->map_vector.at(1).map;
+    g_client.call(srv);
 
-  // Publish tfs
-  mrgs_complete_map::LatestMapTF temp_latest;
-  temp_latest.transform = srv.response.transform1;
-  temp_latest.id = 0;
-  g_remote_tf_pub.publish(temp_latest);
-  temp_latest.transform = srv.response.transform2;
-  temp_latest.id = 1;
-  g_remote_tf_pub.publish(temp_latest);
+    // Publish tfs
+    mrgs_complete_map::LatestMapTF temp_latest;
+    temp_latest.transform = srv.response.transform1;
+    temp_latest.id = 0;
+    g_remote_tf_pub.publish(temp_latest);
+    temp_latest.transform = srv.response.transform2;
+    temp_latest.id = 1;
+    g_remote_tf_pub.publish(temp_latest);
 
-  // Publish foreign maps
-  nav_msgs::OccupancyGrid temp_map;
-  temp_map = maps->map_vector.at(1).map;
-  temp_map.header.frame_id = "/mrgs/robot_1/map";
-  g_foreign_map_pub.publish(temp_map);
+    // Publish foreign maps
+    nav_msgs::OccupancyGrid temp_map;
+    temp_map = maps->map_vector.at(1).map;
+    temp_map.header.frame_id = "/robot_1/map";
+    g_foreign_map_pub.publish(temp_map);
+  }
+  else if(maps->map_vector.size() == 3)
+  {
+    // Fuse the two maps and get the tfs
+    mrgs_alignment::align srv;
+    srv.request.map1 = maps->map_vector.at(0).map;
+    srv.request.map2 = maps->map_vector.at(1).map;
+    g_client.call(srv);
+
+    // Publish tfs
+    mrgs_complete_map::LatestMapTF temp_latest;
+    temp_latest.transform = srv.response.transform1;
+    temp_latest.id = 0;
+    g_remote_tf_pub.publish(temp_latest);
+    temp_latest.transform = srv.response.transform2;
+    temp_latest.id = 1;
+    g_remote_tf_pub.publish(temp_latest);
+
+    // Fuse 2 into 0
+    srv.request.map1 = maps->map_vector.at(0).map;
+    srv.request.map2 = maps->map_vector.at(2).map;
+    g_client.call(srv);
+
+    // Publish tfs
+    temp_latest.transform = srv.response.transform2;
+    temp_latest.id = 2;
+    g_remote_tf_pub.publish(temp_latest);
+
+    // Publish foreign maps
+    nav_msgs::OccupancyGrid temp_map;
+    temp_map = maps->map_vector.at(1).map;
+    temp_map.header.frame_id = "/robot_1/map";
+    g_foreign_map_pub.publish(temp_map);
+    temp_map = maps->map_vector.at(1).map;
+    temp_map.header.frame_id = "/robot_2/map";
+    g_foreign_map_pub2.publish(temp_map);
+  }
+  else
+    ROS_FATAL("I'm not yet capable of dealing with %d maps!", maps->map_vector.size());
 
   // Inform
   ROS_INFO("Map vector processing took %fs.", (ros::Time::now() - init).toSec());
@@ -110,7 +157,8 @@ int main(int argc, char **argv)
   mrgs_alignment::align srv;
   ros::Subscriber sub2 = n.subscribe("mrgs/foreign_maps", 1, processForeignMaps);
   g_remote_tf_pub = n.advertise<mrgs_complete_map::LatestMapTF>("mrgs/remote_tf", 10);
-  g_foreign_map_pub = n.advertise<nav_msgs::OccupancyGrid>("robot_1/map", 10);;
+  g_foreign_map_pub = n.advertise<nav_msgs::OccupancyGrid>("/mrgs/robot_1/map", 10);
+  g_foreign_map_pub2 = n.advertise<nav_msgs::OccupancyGrid>("/mrgs/robot_2/map", 10);
 
   // ROS loop
   ros::spin();

@@ -94,7 +94,7 @@ void processForeignMaps(const mrgs_data_interface::ForeignMapVector::ConstPtr& m
   // Publish foreign maps
   nav_msgs::OccupancyGrid temp_map;
   temp_map = maps->map_vector.at(1).map;
-  temp_map.header.frame_id = "/robot_1/map";
+  temp_map.header.frame_id = "/mrgs/robot_1/map";
   g_foreign_map_pub.publish(temp_map);
 
   // Inform

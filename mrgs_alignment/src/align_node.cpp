@@ -356,7 +356,7 @@ bool align(mrgs_alignment::align::Request &req, mrgs_alignment::align:: Response
   // From map2 to merged_map
   // Rotation
   float deg_to_rad = 0.01745329251; // = pi/180, precalculated for performance.
-  float theta = deg_to_rad * -1 * hyp[0].rotation;
+  float theta = deg_to_rad *  hyp[0].rotation;
 
   // Center to center
   tf::Transform center_to_center;

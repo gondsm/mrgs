@@ -74,6 +74,7 @@ ros::ServiceClient g_client;
 ros::Publisher g_remote_tf_pub;
 ros::Publisher g_foreign_map_pub;
 ros::Publisher g_foreign_map_pub2;
+ros::Publisher g_foreign_map_pub3;
 
 
 void processForeignMaps(const mrgs_data_interface::ForeignMapVector::ConstPtr& maps)
@@ -141,6 +142,56 @@ void processForeignMaps(const mrgs_data_interface::ForeignMapVector::ConstPtr& m
     temp_map.header.frame_id = "/robot_2/map";
     g_foreign_map_pub2.publish(temp_map);
   }
+  else if(maps->map_vector.size() == 4)
+  {
+    // Fuse the two maps and get the tfs
+    mrgs_alignment::align srv;
+    srv.request.map1 = maps->map_vector.at(0).map;
+    srv.request.map2 = maps->map_vector.at(1).map;
+    g_client.call(srv);
+
+    // Publish tfs
+    mrgs_complete_map::LatestMapTF temp_latest;
+    temp_latest.transform = srv.response.transform1;
+    temp_latest.id = 0;
+    g_remote_tf_pub.publish(temp_latest);
+    temp_latest.transform = srv.response.transform2;
+    temp_latest.id = 1;
+    g_remote_tf_pub.publish(temp_latest);
+
+    // Fuse 2 into 0
+    srv.request.map1 = maps->map_vector.at(0).map;
+    srv.request.map2 = maps->map_vector.at(2).map;
+    g_client.call(srv);
+
+    // Publish tfs
+    temp_latest.transform = srv.response.transform2;
+    temp_latest.id = 2;
+    g_remote_tf_pub.publish(temp_latest);
+
+    // Fuse 3 into 0
+    srv.request.map1 = maps->map_vector.at(0).map;
+    srv.request.map2 = maps->map_vector.at(3).map;
+    g_client.call(srv);
+
+    // Publish tfs
+    temp_latest.transform = srv.response.transform2;
+    temp_latest.id = 3;
+    g_remote_tf_pub.publish(temp_latest);
+
+    // Publish foreign maps
+    nav_msgs::OccupancyGrid temp_map;
+    temp_map = maps->map_vector.at(1).map;
+    temp_map.header.frame_id = "/robot_1/map";
+    g_foreign_map_pub.publish(temp_map);
+    temp_map = maps->map_vector.at(1).map;
+    temp_map.header.frame_id = "/robot_2/map";
+    g_foreign_map_pub2.publish(temp_map);
+    temp_map = maps->map_vector.at(2).map;
+    temp_map.header.frame_id = "/robot_3/map";
+    g_foreign_map_pub2.publish(temp_map);
+
+  }
   else
     ROS_FATAL("I'm not yet capable of dealing with %d maps!", maps->map_vector.size());
 
@@ -159,6 +210,7 @@ int main(int argc, char **argv)
   g_remote_tf_pub = n.advertise<mrgs_complete_map::LatestMapTF>("mrgs/remote_tf", 10);
   g_foreign_map_pub = n.advertise<nav_msgs::OccupancyGrid>("/mrgs/robot_1/map", 10);
   g_foreign_map_pub2 = n.advertise<nav_msgs::OccupancyGrid>("/mrgs/robot_2/map", 10);
+  g_foreign_map_pub3 = n.advertise<nav_msgs::OccupancyGrid>("/mrgs/robot_2/map", 10);
 
   // ROS loop
   ros::spin();

@@ -75,14 +75,50 @@ ros::Publisher g_remote_tf_pub;
 ros::Publisher g_foreign_map_pub;
 ros::Publisher g_foreign_map_pub2;
 ros::Publisher g_foreign_map_pub3;
+std::vector<ros::Publisher> map_pub_vector;
 
 
-void processForeignMaps(const mrgs_data_interface::ForeignMapVector::ConstPtr& maps)
+void processForeignMaps(const mrgs_data_interface::ForeignMapVector::ConstPtr& maps, ros::NodeHandle n)
 {
   /// Inform and start counting time
   ROS_INFO("Received a foreign map vector with %d maps.", maps->map_vector.size());
   ros::Time init = ros::Time::now();
 
+  // Augment publisher vector, if needed
+  if(maps->map_vector.size() > map_pub_vector.size())
+  {
+    char topic_name[20];
+    sprintf(topic_name, "/mrgs/robot_%d/map", map_pub_vector.size()-1);
+    map_pub_vector.push_back(n.advertise<nav_msgs::OccupancyGrid>(topic_name, 1, true));
+  }
+
+  // Perform the iterative fusion and TF publication
+  for(int i = 1; i < maps->map_vector.size(); i++)
+  {
+    // Fuse map i with 0
+    mrgs_alignment::align srv;
+    srv.request.map1 = maps->map_vector.at(0).map;
+    srv.request.map2 = maps->map_vector.at(i).map;
+    g_client.call(srv);
+
+    // Publish TF
+    mrgs_complete_map::LatestMapTF temp_latest;
+    temp_latest.transform = srv.response.transform1;
+    temp_latest.id = 0;
+    g_remote_tf_pub.publish(temp_latest);
+    temp_latest.transform = srv.response.transform2;
+    temp_latest.id = i;
+    g_remote_tf_pub.publish(temp_latest);
+
+    // Publish map
+    nav_msgs::OccupancyGrid temp_map;
+    temp_map = maps->map_vector.at(i).map;
+    std::string buffer("/robot_%d/map", i);
+    temp_map.header.frame_id = buffer;
+    map_pub_vector.at(i-1).publish(temp_map);
+  }
+
+  /*
   if(maps->map_vector.size() == 2)
   {
     // Fuse the two maps and get the tfs
@@ -196,7 +232,7 @@ void processForeignMaps(const mrgs_data_interface::ForeignMapVector::ConstPtr& m
     ROS_FATAL("I'm not yet capable of dealing with %d maps!", maps->map_vector.size());
 
   // Inform
-  ROS_INFO("Map vector processing took %fs.", (ros::Time::now() - init).toSec());
+  ROS_INFO("Map vector processing took %fs.", (ros::Time::now() - init).toSec());*/
 }
 
 int main(int argc, char **argv)
@@ -206,11 +242,12 @@ int main(int argc, char **argv)
   ros::NodeHandle n;
   g_client = n.serviceClient<mrgs_alignment::align>("align");
   mrgs_alignment::align srv;
-  ros::Subscriber sub2 = n.subscribe("mrgs/foreign_maps", 1, processForeignMaps);
+  //ros::Subscriber sub2 = n.subscribe("mrgs/foreign_maps", 1, processForeignMaps);
   g_remote_tf_pub = n.advertise<mrgs_complete_map::LatestMapTF>("mrgs/remote_tf", 10);
   g_foreign_map_pub = n.advertise<nav_msgs::OccupancyGrid>("/mrgs/robot_1/map", 10);
   g_foreign_map_pub2 = n.advertise<nav_msgs::OccupancyGrid>("/mrgs/robot_2/map", 10);
   g_foreign_map_pub3 = n.advertise<nav_msgs::OccupancyGrid>("/mrgs/robot_2/map", 10);
+  ros::Subscriber sub2 = n.subscribe<mrgs_data_interface::ForeignMapVector>("mrgs/foreign_maps", 1, boost::bind(processForeignMaps, _1, n));
 
   // ROS loop
   ros::spin();

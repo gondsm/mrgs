@@ -85,10 +85,10 @@ void processForeignMaps(const mrgs_data_interface::ForeignMapVector::ConstPtr& m
   ros::Time init = ros::Time::now();
 
   // Augment publisher vector, if needed
-  if(maps->map_vector.size() > map_pub_vector.size())
+  if(maps->map_vector.size()-1 > map_pub_vector.size())
   {
     char topic_name[20];
-    sprintf(topic_name, "/mrgs/robot_%d/map", map_pub_vector.size()-1);
+    sprintf(topic_name, "/mrgs/robot_%d/map", map_pub_vector.size()+1);
     map_pub_vector.push_back(n.advertise<nav_msgs::OccupancyGrid>(topic_name, 1, true));
   }
 
@@ -113,8 +113,9 @@ void processForeignMaps(const mrgs_data_interface::ForeignMapVector::ConstPtr& m
     // Publish map
     nav_msgs::OccupancyGrid temp_map;
     temp_map = maps->map_vector.at(i).map;    // Map i will be published
-    std::string buffer("/robot_%d/map", i);   // Will hold the correct frame_id
-    temp_map.header.frame_id = buffer;
+    char c_buffer[15];
+    sprintf(c_buffer, "/robot_%d/map", i);
+    temp_map.header.frame_id = c_buffer;
     map_pub_vector.at(i-1).publish(temp_map); // Publisher i-1 corresponds to map i.
   }
 
@@ -244,9 +245,9 @@ int main(int argc, char **argv)
   mrgs_alignment::align srv;
   //ros::Subscriber sub2 = n.subscribe("mrgs/foreign_maps", 1, processForeignMaps);
   g_remote_tf_pub = n.advertise<mrgs_complete_map::LatestMapTF>("mrgs/remote_tf", 10);
-  g_foreign_map_pub = n.advertise<nav_msgs::OccupancyGrid>("/mrgs/robot_1/map", 10);
-  g_foreign_map_pub2 = n.advertise<nav_msgs::OccupancyGrid>("/mrgs/robot_2/map", 10);
-  g_foreign_map_pub3 = n.advertise<nav_msgs::OccupancyGrid>("/mrgs/robot_2/map", 10);
+  //g_foreign_map_pub = n.advertise<nav_msgs::OccupancyGrid>("/mrgs/robot_1/map", 10);
+  //g_foreign_map_pub2 = n.advertise<nav_msgs::OccupancyGrid>("/mrgs/robot_2/map", 10);
+  //g_foreign_map_pub3 = n.advertise<nav_msgs::OccupancyGrid>("/mrgs/robot_3/map", 10);
   ros::Subscriber sub2 = n.subscribe<mrgs_data_interface::ForeignMapVector>("mrgs/foreign_maps", 1, boost::bind(processForeignMaps, _1, n));
 
   // ROS loop

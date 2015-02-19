@@ -92,10 +92,10 @@ void processForeignMaps(const mrgs_data_interface::ForeignMapVector::ConstPtr& m
     map_pub_vector.push_back(n.advertise<nav_msgs::OccupancyGrid>(topic_name, 1, true));
   }
 
-  // Perform the iterative fusion and TF publication
+  // Perform the iterative fusion and TF and map publication
   for(int i = 1; i < maps->map_vector.size(); i++)
   {
-    // Fuse map i with 0
+    // Fuse map i with 0 (regular call to the alignment node)
     mrgs_alignment::align srv;
     srv.request.map1 = maps->map_vector.at(0).map;
     srv.request.map2 = maps->map_vector.at(i).map;
@@ -112,10 +112,10 @@ void processForeignMaps(const mrgs_data_interface::ForeignMapVector::ConstPtr& m
 
     // Publish map
     nav_msgs::OccupancyGrid temp_map;
-    temp_map = maps->map_vector.at(i).map;
-    std::string buffer("/robot_%d/map", i);
+    temp_map = maps->map_vector.at(i).map;    // Map i will be published
+    std::string buffer("/robot_%d/map", i);   // Will hold the correct frame_id
     temp_map.header.frame_id = buffer;
-    map_pub_vector.at(i-1).publish(temp_map);
+    map_pub_vector.at(i-1).publish(temp_map); // Publisher i-1 corresponds to map i.
   }
 
   /*
@@ -229,10 +229,10 @@ void processForeignMaps(const mrgs_data_interface::ForeignMapVector::ConstPtr& m
 
   }
   else
-    ROS_FATAL("I'm not yet capable of dealing with %d maps!", maps->map_vector.size());
+    ROS_FATAL("I'm not yet capable of dealing with %d maps!", maps->map_vector.size());*/
 
   // Inform
-  ROS_INFO("Map vector processing took %fs.", (ros::Time::now() - init).toSec());*/
+  ROS_INFO("Map vector processing took %fs.", (ros::Time::now() - init).toSec());
 }
 
 int main(int argc, char **argv)

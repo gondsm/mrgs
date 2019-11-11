@@ -165,6 +165,9 @@ add_executable(align_test src/align_test.cpp)
 target_link_libraries(align_node mapmerge ${catkin_LIBRARIES})
 target_link_libraries(align_test mapmerge ${catkin_LIBRARIES})
 
+add_dependencies(align_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(align_test ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+
 #############
 ## Install ##
 #############

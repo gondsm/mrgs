@@ -159,6 +159,7 @@ include_directories(
 add_library(lz4 src/lz4/lib/lz4.c)
 add_executable(data_interface_node src/data_interface_node.cpp)
 target_link_libraries(data_interface_node lz4 ${catkin_LIBRARIES})
+add_dependencies(data_interface_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 #############
 ## Install ##

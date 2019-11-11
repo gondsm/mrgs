@@ -165,6 +165,10 @@ target_link_libraries(complete_map_node_alt
   ${catkin_LIBRARIES}
 )
 
+add_dependencies(complete_map_node ${catkin_EXPORTED_TARGETS})
+add_dependencies(complete_map_node_alt ${catkin_EXPORTED_TARGETS})
+
+
 #############
 ## Install ##
 #############

@@ -164,6 +164,9 @@ target_link_libraries(map_dam_node
   ${catkin_LIBRARIES}
 )
 
+add_dependencies(remote_nav_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(map_dam_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+
 #############
 ## Install ##
 #############

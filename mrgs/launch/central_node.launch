@@ -6,7 +6,7 @@
 -->
 
 <launch>
-  <include file="$(find mrgs_scripts)/launch/common.launch">
+  <include file="$(find mrgs)/launch/common.launch">
     <arg name="interface" value="none"/>
     <arg name="is_centralized" value="true"/>
     <arg name="launch_rviz" value="false"/>

@@ -14,7 +14,7 @@
   <arg name="interface"/>
   <arg name="is_centralized"/>
   <arg name="launch_rviz"/>
-  <arg name="alt_mode"/>
+  <arg name="alt_mode" default="false"/>
 
   <!-- Parameters -->
   <param name="is_centralized" value="$(arg is_centralized)" />

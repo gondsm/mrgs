@@ -9,7 +9,7 @@
 
 <launch>
   <arg name="interface" default="$(optenv MRGS_INTERFACE)"/>
-  <include file="$(find mrgs_scripts)/launch/common.launch">
+  <include file="$(find mrgs)/launch/common.launch">
     <arg name="interface" value="$(arg interface)"/>
     <arg name="is_centralized" value="false"/>
     <arg name="launch_rviz" value="false"/>

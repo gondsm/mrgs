@@ -1,3 +1,12 @@
+# TO-DO
+
+This package is currently under heavy re-work. This branch is expected to be very unstable for a while.
+
+- [ ] Re-work installation mechanism (`rosdep install mrgs`)
+- [ ] Re-implement communication using `multimaster_fkie`
+- [ ] Test with new datasets
+- [ ] Update README with new instructions
+
 mrgs
 ===
 A Cooperative SLAM Framework with Efficient Information Sharing over Mobile Ad Hoc Networks.

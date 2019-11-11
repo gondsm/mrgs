@@ -9,7 +9,7 @@ srv_gen/
 
 # Ignore LZ4
 mrgs_compression_test/src/lz4/
-mrgs_data_interface/src/lz4
+mrgs_data_interface/include/lz4
 
 # Ignore weird folders created inside src
 mrgs_alignment/src/mrgs_alignment/

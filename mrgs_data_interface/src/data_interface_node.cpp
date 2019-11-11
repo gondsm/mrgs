@@ -78,10 +78,7 @@
 #include "mrgs_data_interface/MacArray.h"
 
 /// LZ4 include:
-#include "lz4/lz4.h"
-
-/// Wifi_comm includes
-#include "wifi_comm/wifi_comm_lib.h"
+#include "lz4.h"
 
 /// Other includes
 #include <string>
@@ -98,8 +95,6 @@ ros::NodeHandle *g_n;
 std::vector<std::string> g_peer_macs;
 // To be written by the processForeignMap callback
 std::vector<mrgs_data_interface::ForeignMap> g_foreign_map_vector;
-// wifi_comm object
-wifi_comm::WiFiComm* g_my_comm;
 // Global list of wifi_comm subscribers
 std::vector<ros::Subscriber> g_subs;
 // To indicate whether or not we have a map from the local robot
@@ -165,7 +160,12 @@ void processForeignMap(std::string ip, const mrgs_data_interface::NetworkMap::Co
     mrgs_data_interface::ForeignMap newMap;
     newMap.robot_id = id;                         // Attribute the right id
     g_foreign_map_vector.push_back(newMap);       // Add a new, uninitialized map.
-    ROS_DEBUG("We've never met this guy before. His id is now %d. Vector sizes are %d and %d.", id, g_peer_macs.size(), g_foreign_map_vector.size());
+    ROS_DEBUG(
+      "We've never met this guy before. His id is now %d. Vector sizes are %d and %d.",
+      id,
+      static_cast<int>(g_peer_macs.size()),
+      static_cast<int>(g_foreign_map_vector.size())
+      );
 
     // MAC address vector changed, publish those changes
     mrgs_data_interface::MacArray mac_msg;
@@ -186,7 +186,10 @@ void processForeignMap(std::string ip, const mrgs_data_interface::NetworkMap::Co
   /// Decompress data
   if(msg->decompressed_length > 0 && is_repeated == false)  // Messages with decompressed_length == 0 are test messages.
   {
-    ROS_DEBUG("Received map consists of %d compressed bytes. Decompressing.", msg->compressed_data.size());
+    ROS_DEBUG(
+      "Received map consists of %d compressed bytes. Decompressing.",
+      static_cast<int>(msg->compressed_data.size())
+      );
     // Allocate and populate compressed buffer
     char* compressed = new char[msg->compressed_data.size()];
     for(int i = 0; i < msg->compressed_data.size(); i++)
@@ -226,29 +229,6 @@ void processForeignMap(std::string ip, const mrgs_data_interface::NetworkMap::Co
 
   /// Inform
   ROS_INFO("Processing foreign map took %fs.", (ros::Time::now() - init).toSec());
-}
-
-void newRobotInNetwork(char * ip)
-{
-  // Inform
-  ROS_INFO("Connecting to new peer at %s.", ip);
-
-  // Send
-  g_my_comm->openForeignRelay(ip, "/mrgs/external_map", true);
-
-  // Receive
-  // We only need to receive maps if we are not simple transmitters.
-  if(!g_transmitter_mode)
-  {
-    char topic[128];
-    ROS_INFO("Subscribing to remote topic.");
-    ros::Subscriber sub = g_n->subscribe<mrgs_data_interface::NetworkMap>(wifi_comm::WiFiComm::concatTopicAndIp(topic, "/mrgs/external_map", ip),
-                                                                          1,  // Number of messages to keep on the input queue
-                                                                          boost::bind(processForeignMap,
-                                                                          std::string(ip), _1));
-    g_subs.push_back(sub);
-    ROS_INFO("Subscribed");
-  }
 }
 
 void processMap(const mrgs_data_interface::LocalMap::ConstPtr& map)
@@ -315,7 +295,7 @@ void sigintHandler(int sig)
 
   if(g_sent_size.size() > 0)
   {
-    ROS_INFO("%d maps processed.", g_sent_size.size());
+    ROS_INFO("%d maps processed.", static_cast<int>(g_sent_size.size()));
     ROS_INFO("Total map size (before compression): %d bytes.", total_uncompressed_bytes);
     ROS_INFO("Total sent size: %d bytes.", total_sent_bytes);
     ROS_INFO("Mean compression ratio: %f.", float(total_uncompressed_bytes)/total_sent_bytes);
@@ -401,10 +381,7 @@ int main(int argc, char **argv)
     g_foreign_map_vector.push_back(emptyMap);
   }
 
-  // wifi_comm init
-  boost::function<void (char *)> new_robot_callback;
-  new_robot_callback = newRobotInNetwork;
-  g_my_comm = new wifi_comm::WiFiComm(new_robot_callback);
+  // comms init
   g_external_map = new ros::Publisher;
   *g_external_map = g_n->advertise<mrgs_data_interface::NetworkMap>("/mrgs/external_map", 10);
   g_foreign_map_vector_publisher = g_n->advertise<mrgs_data_interface::ForeignMapVector>("mrgs/foreign_maps", 10);

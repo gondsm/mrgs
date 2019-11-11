@@ -117,6 +117,8 @@ ros::Publisher g_external_pose;
 ros::Publisher g_mac_address_vector_pub;
 // Time at which the last pose transmission occurred
 ros::Time g_since_last_pose;
+// Subscriber for network maps
+ros::Subscriber g_external_map_sub;
 
 // Performance Metrics:
 // Compressed and Uncompressed size of each sent map:
@@ -140,7 +142,7 @@ inline int getRobotID(std:: string mac){
     return -1;
 }
 
-void processForeignMap(std::string ip, const mrgs_data_interface::NetworkMap::ConstPtr& msg)
+void processForeignMap(const mrgs_data_interface::NetworkMap::ConstPtr& msg)
 {
   // Start counting time
   ROS_INFO("Processing new foreign map.");
@@ -149,7 +151,7 @@ void processForeignMap(std::string ip, const mrgs_data_interface::NetworkMap::Co
   /// Determine which robot sent the map (i.e. determine its ID) and act on that knowledge.
   int id = getRobotID(msg->mac);
   // Inform the outside world of our reception.
-  ROS_INFO("Received from %s, with mac %s, id %d.", ip.c_str(), msg->mac.c_str(), id);
+  ROS_INFO("Received mac %s, id %d.", msg->mac.c_str(), id);
   bool is_repeated = false;
   if(id == -1)
   {
@@ -341,39 +343,8 @@ int main(int argc, char **argv)
   // We only need an interface in distributed or transmitter modes
   if(!g_centralized_mode || g_transmitter_mode)
   {
-    // Get interface parameter
-    std::string interface;
-    if(!g_n->getParam("interface", interface))
-    {
-      ROS_FATAL("Could not get a parameter indicating the interface we'll be using!");
-      return -1;
-    }
-    else
-    {
-      ROS_INFO("Parameter received. Using interface %s.", interface.c_str());
-    }
-
-    // Retrieve local MAC address
-    std::string* mac_file_path = new std::string(std::string("/sys/class/net/") +
-                                                 interface +
-                                                 std::string("/address"));
-    ROS_DEBUG("Retrieving MAC from %s.", mac_file_path->c_str());
-    std::string* local_mac = new std::string;
-    std::ifstream mac_file;
-    mac_file.open((*mac_file_path).c_str(), std::ios::in);
-    if(mac_file.is_open())
-    {
-      mac_file >> *local_mac;
-      mac_file.close();
-      g_peer_macs.push_back(*local_mac);
-      delete local_mac;                   // No need to keep this extra stuff in memory
-      delete mac_file_path;               // Idem
-    }
-    else
-    {
-      ROS_FATAL("Can't open mac address file, did you input the right interface?");
-      return -1;
-    }
+    // TODO: This needs to be random so that each robot has a unique ID
+    g_peer_macs.push_back("REPLACE_WITH_RANDOM_STRING");
 
     // Push an empty map into the foreign map vector, to keep it aligned with IDs.
     mrgs_data_interface::ForeignMap emptyMap;
@@ -391,6 +362,7 @@ int main(int argc, char **argv)
 
   // Declare callbacks
   ros::Subscriber map = g_n->subscribe<mrgs_data_interface::LocalMap>("mrgs/local_map", 1, processMap);
+  g_external_map_sub = g_n->subscribe<mrgs_data_interface::NetworkMap>("/mrgs/external_map", 10, processForeignMap);
   signal(SIGINT, sigintHandler);
 
   // Regular execution:

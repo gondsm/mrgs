@@ -127,6 +127,21 @@ std::vector<int> g_sent_size;
 // Processing times
 std::vector<float> g_map_processing_time;
 
+inline std::string generateId(const int len=20){
+  // https://stackoverflow.com/questions/440133/how-do-i-create-a-random-alpha-numeric-string-in-c
+
+  static const char alphanum[] =
+    "0123456789"
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    "abcdefghijklmnopqrstuvwxyz";
+
+  std::string str;
+  for (int i = 0; i < len; ++i) {
+    str += alphanum[rand() % (sizeof(alphanum) - 1)];
+  }
+  return str;
+}
+
 inline int getRobotID(std:: string mac){
   // Find the desired MAC's index
   // If we're on centralized mode, this may show up empty once
@@ -344,7 +359,9 @@ int main(int argc, char **argv)
   if(!g_centralized_mode || g_transmitter_mode)
   {
     // TODO: This needs to be random so that each robot has a unique ID
-    g_peer_macs.push_back("REPLACE_WITH_RANDOM_STRING");
+    auto local_id = generateId();
+    ROS_INFO_STREAM("Initialized new data interface with ID " << local_id);
+    g_peer_macs.push_back(local_id);
 
     // Push an empty map into the foreign map vector, to keep it aligned with IDs.
     mrgs_data_interface::ForeignMap emptyMap;

@@ -8,8 +8,6 @@
 -->
 <launch>
 
-  <env name="ROSCONSOLE_FORMAT" value="[${severity}] [${node}]: ${message}"/>
-
   <!-- Arguments -->
   <arg name="interface"/>
   <arg name="is_centralized"/>
@@ -22,8 +20,6 @@
   <param name="is_transmitter" value="false" />
 
   <!-- mrgs -->
-  <!-- wifi_comm node -->
-  <node name="wifi_discovery_node" pkg="wifi_comm" type="wifi_discovery_node" />
   <!-- mrgs_data_interface node-->
   <node name="data_interface_node" pkg="mrgs_data_interface" type="data_interface_node" output="screen"/>
   <!-- mrgs_complete_map node -->

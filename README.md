@@ -5,7 +5,7 @@ This package is currently under heavy re-work. This branch is expected to be ver
 - [ ] Re-work installation mechanism (`rosdep install mrgs`)
 - [X] Re-work topics to be compatibel with `multimaster_fkie`
 - [ ] Add `multimaster_fkie` to launch files
-- [ ] Add launch files to launch multiple systems with node name suffixes
+- [X] Add launch files to launch multiple systems with node name suffixes
 - [ ] Test with new datasets
 - [X] Update README with new instructions
 

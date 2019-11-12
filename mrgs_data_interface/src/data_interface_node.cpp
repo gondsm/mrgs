@@ -81,8 +81,10 @@
 #include "lz4.h"
 
 /// Other includes
+#include <cstdlib>
 #include <string>
 #include <fstream>
+#include <chrono>
 #include <signal.h>
 
 /// Global variables
@@ -129,6 +131,12 @@ std::vector<float> g_map_processing_time;
 
 inline std::string generateId(const int len=20){
   // https://stackoverflow.com/questions/440133/how-do-i-create-a-random-alpha-numeric-string-in-c
+
+  // But why not just srand(time(NULL)) like always?
+  srand(std::chrono::steady_clock::now().time_since_epoch().count());
+  // Because, dear reader, if you start two of these in the same second, they'll have the same ID.
+  // This is far less likely to happen with milliseconds, and if it does you can just marvel at
+  // how sometimes everything comes together to screw you.
 
   static const char alphanum[] =
     "0123456789"
@@ -358,7 +366,7 @@ int main(int argc, char **argv)
   // We only need an interface in distributed or transmitter modes
   if(!g_centralized_mode || g_transmitter_mode)
   {
-    // TODO: This needs to be random so that each robot has a unique ID
+    // This needs to be random so that each robot has a unique ID
     auto local_id = generateId();
     ROS_INFO_STREAM("Initialized new data interface with ID " << local_id);
     g_peer_macs.push_back(local_id);

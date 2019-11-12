@@ -3,10 +3,10 @@
 This package is currently under heavy re-work. This branch is expected to be very unstable for a while.
 
 - [ ] Re-work installation mechanism (`rosdep install mrgs`)
-- [X] Re-work topics to be compatibel with `multimaster_fkie`
 - [ ] Add `multimaster_fkie` to launch files
+- [ ] Test with datasets (see instructions and debug tf issues)
 - [X] Add launch files to launch multiple systems with node name suffixes
-- [ ] Test with new datasets
+- [X] Re-work topics to be compatibel with `multimaster_fkie`
 - [X] Update README with new instructions
 
 mrgs
@@ -61,6 +61,21 @@ roslaunch mrgs_scripts mapper_node.launch
 #### Something else
 
 You can mix and match the centralized and distributed nodes to fit your particular team. Just make sure that every multimaster_fkie is up and running correctly.
+
+#### "What if I don't have many robots/PCs/roscores and still want to witness mrgs's greatness?"
+
+Fear not:
+
+```
+roslaunch mrgs test_two_systems.launch 
+```
+
+launches a couple of systems without multimaster. Then you can launch bagfiles by remapping their output:
+
+```
+rosbag play 1.bag map:=robot_1/map
+rosbag play 2.bag map:=robot_2/map
+```
 
 ## Overview
 The code is divided into four packages, described below, with an additional package holding scripts, launch files, bags and the like.

@@ -5,9 +5,15 @@
 -->
 
 <launch>
-  <arg name="prefix" default=""/>
   <include file="$(find mrgs)/launch/common.launch">
-    <arg name="prefix" value="$(arg prefix)"/>
+    <arg name="prefix" value="robot_1"/>
+    <arg name="is_centralized" value="false"/>
+    <arg name="launch_rviz" value="false"/>
+    <arg name="alt_mode" value="false"/>
+  </include>
+
+  <include file="$(find mrgs)/launch/common.launch">
+    <arg name="prefix" value="robot_2"/>
     <arg name="is_centralized" value="false"/>
     <arg name="launch_rviz" value="false"/>
     <arg name="alt_mode" value="false"/>

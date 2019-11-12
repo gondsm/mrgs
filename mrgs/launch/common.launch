@@ -9,31 +9,93 @@
 <launch>
 
   <!-- Arguments -->
-  <arg name="interface"/>
   <arg name="is_centralized"/>
   <arg name="launch_rviz"/>
   <arg name="alt_mode" default="false"/>
+  <arg name="prefix"   default=""/>
 
   <!-- Parameters -->
   <param name="is_centralized" value="$(arg is_centralized)" />
-  <param name="interface" value="$(arg interface)" />
   <param name="is_transmitter" value="false" />
+
+  <!-- Implement args for the topic names intead of having this dirty remapping everywhere. -->
 
   <!-- mrgs -->
   <!-- mrgs_data_interface node-->
-  <node name="data_interface_node" pkg="mrgs_data_interface" type="data_interface_node" output="screen"/>
+  <node name="$(arg prefix)data_interface_node" pkg="mrgs_data_interface" type="data_interface_node" output="screen">
+    <remap from="mrgs/complete_map"     to="$(arg prefix)/mrgs/complete_map"/>
+    <!--remap from="mrgs/external_map"     to="$(arg prefix)/mrgs/external_map"/-->
+    <remap from="mrgs/foreign_maps"     to="$(arg prefix)/mrgs/foreign_maps"/>
+    <remap from="mrgs/local_map"        to="$(arg prefix)/mrgs/local_map"/>
+    <remap from="mrgs/local_map/debug"  to="$(arg prefix)/mrgs/local_map/debug"/>
+    <remap from="mrgs/mac_addresses"    to="$(arg prefix)/mrgs/mac_addresses"/>
+    <remap from="mrgs/remote_poses"     to="$(arg prefix)/mrgs/remote_poses"/>
+    <remap from="mrgs/remote_tf"        to="$(arg prefix)/mrgs/remote_tf"/>
+    <remap from="map"                   to="$(arg prefix)/map"/>
+
+  </node>
   <!-- mrgs_complete_map node -->
-  <node name="complete_map_node" pkg="mrgs_complete_map" type="complete_map_node" output="screen" unless="$(arg alt_mode)"/>
-  <node name="complete_map_node_alt" pkg="mrgs_complete_map" type="complete_map_node_alt" output="screen" if="$(arg alt_mode)"/>
+  <node name="$(arg prefix)complete_map_node" pkg="mrgs_complete_map" type="complete_map_node" output="screen" unless="$(arg alt_mode)">
+    <remap from="mrgs/complete_map"     to="$(arg prefix)/mrgs/complete_map"/>
+    <!--remap from="mrgs/external_map"     to="$(arg prefix)/mrgs/external_map"/-->
+    <remap from="mrgs/foreign_maps"     to="$(arg prefix)/mrgs/foreign_maps"/>
+    <remap from="mrgs/local_map"        to="$(arg prefix)/mrgs/local_map"/>
+    <remap from="mrgs/local_map/debug"  to="$(arg prefix)/mrgs/local_map/debug"/>
+    <remap from="mrgs/mac_addresses"    to="$(arg prefix)/mrgs/mac_addresses"/>
+    <remap from="mrgs/remote_poses"     to="$(arg prefix)/mrgs/remote_poses"/>
+    <remap from="mrgs/remote_tf"        to="$(arg prefix)/mrgs/remote_tf"/>
+    <remap from="map"                   to="$(arg prefix)/map"/>
+  </node>
+  <node name="$(arg prefix)complete_map_node_alt" pkg="mrgs_complete_map" type="complete_map_node_alt" output="screen" if="$(arg alt_mode)">
+    <remap from="mrgs/complete_map"     to="$(arg prefix)/mrgs/complete_map"/>
+    <!--remap from="mrgs/external_map"     to="$(arg prefix)/mrgs/external_map"/-->
+    <remap from="mrgs/foreign_maps"     to="$(arg prefix)/mrgs/foreign_maps"/>
+    <remap from="mrgs/local_map"        to="$(arg prefix)/mrgs/local_map"/>
+    <remap from="mrgs/local_map/debug"  to="$(arg prefix)/mrgs/local_map/debug"/>
+    <remap from="mrgs/mac_addresses"    to="$(arg prefix)/mrgs/mac_addresses"/>
+    <remap from="mrgs/remote_poses"     to="$(arg prefix)/mrgs/remote_poses"/>
+    <remap from="mrgs/remote_tf"        to="$(arg prefix)/mrgs/remote_tf"/>
+    <remap from="map"                   to="$(arg prefix)/map"/>
+  </node>
   <!-- mrgs_alignment node -->
-  <node name="align_node" pkg="mrgs_alignment" type="align_node" output="screen" cwd="node"/>
+  <node name="$(arg prefix)align_node" pkg="mrgs_alignment" type="align_node" output="screen" cwd="node">
+    <remap from="mrgs/complete_map"     to="$(arg prefix)/mrgs/complete_map"/>
+    <!--remap from="mrgs/external_map"     to="$(arg prefix)/mrgs/external_map"/-->
+    <remap from="mrgs/foreign_maps"     to="$(arg prefix)/mrgs/foreign_maps"/>
+    <remap from="mrgs/local_map"        to="$(arg prefix)/mrgs/local_map"/>
+    <remap from="mrgs/local_map/debug"  to="$(arg prefix)/mrgs/local_map/debug"/>
+    <remap from="mrgs/mac_addresses"    to="$(arg prefix)/mrgs/mac_addresses"/>
+    <remap from="mrgs/remote_poses"     to="$(arg prefix)/mrgs/remote_poses"/>
+    <remap from="mrgs/remote_tf"        to="$(arg prefix)/mrgs/remote_tf"/>
+    <remap from="map"                   to="$(arg prefix)/map"/>
+  </node>
   <!-- remote_nav node -->
-  <node name="remote_nav_node" pkg="mrgs_auxiliary_nodes" type="remote_nav_node" output="screen"/>
+  <node name="$(arg prefix)remote_nav_node" pkg="mrgs_auxiliary_nodes" type="remote_nav_node" output="screen">
+    <remap from="mrgs/complete_map"     to="$(arg prefix)/mrgs/complete_map"/>
+    <!--remap from="mrgs/external_map"     to="$(arg prefix)/mrgs/external_map"/-->
+    <remap from="mrgs/foreign_maps"     to="$(arg prefix)/mrgs/foreign_maps"/>
+    <remap from="mrgs/local_map"        to="$(arg prefix)/mrgs/local_map"/>
+    <remap from="mrgs/local_map/debug"  to="$(arg prefix)/mrgs/local_map/debug"/>
+    <remap from="mrgs/mac_addresses"    to="$(arg prefix)/mrgs/mac_addresses"/>
+    <remap from="mrgs/remote_poses"     to="$(arg prefix)/mrgs/remote_poses"/>
+    <remap from="mrgs/remote_tf"        to="$(arg prefix)/mrgs/remote_tf"/>
+    <remap from="map"                   to="$(arg prefix)/map"/>
+  </node>
   <!-- dam node -->
-  <node name="map_dam_node" pkg="mrgs_auxiliary_nodes" type="map_dam_node" output="screen" unless="$(arg is_centralized)"/>
+  <node name="$(arg prefix)map_dam_node" pkg="mrgs_auxiliary_nodes" type="map_dam_node" output="screen" unless="$(arg is_centralized)">
+    <remap from="mrgs/complete_map"     to="$(arg prefix)/mrgs/complete_map"/>
+    <!--remap from="mrgs/external_map"     to="$(arg prefix)/mrgs/external_map"/-->
+    <remap from="mrgs/foreign_maps"     to="$(arg prefix)/mrgs/foreign_maps"/>
+    <remap from="mrgs/local_map"        to="$(arg prefix)/mrgs/local_map"/>
+    <remap from="mrgs/local_map/debug"  to="$(arg prefix)/mrgs/local_map/debug"/>
+    <remap from="mrgs/mac_addresses"    to="$(arg prefix)/mrgs/mac_addresses"/>
+    <remap from="mrgs/remote_poses"     to="$(arg prefix)/mrgs/remote_poses"/>
+    <remap from="mrgs/remote_tf"        to="$(arg prefix)/mrgs/remote_tf"/>
+    <remap from="map"                   to="$(arg prefix)/map"/>
+  </node>
 
   <!-- Rviz -->
-  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find mrgs_scripts)/rviz/only_map.vcg" if="$(arg launch_rviz)" />
+  <node name="$(arg prefix)rviz" pkg="rviz" type="rviz" args="-d $(find mrgs_scripts)/rviz/only_map.vcg" if="$(arg launch_rviz)" />
 
   <!-- rqt_console -->
   <!--node name="console" pkg="rqt_console" type="rqt_console"/-->

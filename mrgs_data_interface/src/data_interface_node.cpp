@@ -371,7 +371,7 @@ int main(int argc, char **argv)
 
   // comms init
   g_external_map = new ros::Publisher;
-  *g_external_map = g_n->advertise<mrgs_data_interface::NetworkMap>("/mrgs/external_map", 10);
+  *g_external_map = g_n->advertise<mrgs_data_interface::NetworkMap>("mrgs/external_map", 10);
   g_foreign_map_vector_publisher = g_n->advertise<mrgs_data_interface::ForeignMapVector>("mrgs/foreign_maps", 10);
   g_latest_pose = g_n->advertise<mrgs_data_interface::LatestRobotPose>("mrgs/remote_poses", 10);
   g_since_last_pose = ros::Time::now();
@@ -379,7 +379,7 @@ int main(int argc, char **argv)
 
   // Declare callbacks
   ros::Subscriber map = g_n->subscribe<mrgs_data_interface::LocalMap>("mrgs/local_map", 1, processMap);
-  g_external_map_sub = g_n->subscribe<mrgs_data_interface::NetworkMap>("/mrgs/external_map", 10, processForeignMap);
+  g_external_map_sub = g_n->subscribe<mrgs_data_interface::NetworkMap>("mrgs/external_map", 10, processForeignMap);
   signal(SIGINT, sigintHandler);
 
   // Regular execution:
